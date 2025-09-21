@@ -15,7 +15,7 @@ graph TD
     D -->|Processes Task| F[Task Worker]
     
     F -->|Reads Task Data| C
-    F -->|Connects via JDBC| G[LLM]
+    F <--> |Connects via JDBC| G[LLM]
     F -->|Stores Result| C
 
 
