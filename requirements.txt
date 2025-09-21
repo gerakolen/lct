@@ -1,0 +1,81 @@
+amqp==5.3.1
+    # via kombu
+annotated-types==0.7.0
+    # via pydantic
+anyio==4.10.0
+    # via starlette
+async-timeout==5.0.1 ; python_full_version < '3.11.3'
+    # via redis
+billiard==4.2.1
+    # via celery
+celery==5.4.0
+    # via lct
+click==8.3.0
+    # via
+    #   celery
+    #   click-didyoumean
+    #   click-plugins
+    #   click-repl
+    #   uvicorn
+click-didyoumean==0.3.1
+    # via celery
+click-plugins==1.1.1.2
+    # via celery
+click-repl==0.3.0
+    # via celery
+colorama==0.4.6 ; sys_platform == 'win32'
+    # via click
+fastapi==0.115.0
+    # via lct
+greenlet==3.2.4 ; (python_full_version < '3.13' and platform_machine == 'AMD64') or (python_full_version < '3.13' and platform_machine == 'WIN32') or (python_full_version < '3.13' and platform_machine == 'aarch64') or (python_full_version < '3.13' and platform_machine == 'amd64') or (python_full_version < '3.13' and platform_machine == 'ppc64le') or (python_full_version < '3.13' and platform_machine == 'win32') or (python_full_version < '3.13' and platform_machine == 'x86_64')
+    # via sqlalchemy
+h11==0.16.0
+    # via uvicorn
+idna==3.10
+    # via anyio
+kombu==5.5.4
+    # via celery
+packaging==25.0
+    # via kombu
+prompt-toolkit==3.0.52
+    # via click-repl
+pydantic==2.9.2
+    # via
+    #   fastapi
+    #   lct
+pydantic-core==2.23.4
+    # via pydantic
+python-dateutil==2.9.0.post0
+    # via celery
+python-dotenv==1.0.1
+    # via lct
+redis==5.1.1
+    # via lct
+six==1.17.0
+    # via python-dateutil
+sniffio==1.3.1
+    # via anyio
+sqlalchemy==2.0.36
+    # via lct
+starlette==0.38.6
+    # via fastapi
+typing-extensions==4.15.0
+    # via
+    #   anyio
+    #   fastapi
+    #   pydantic
+    #   pydantic-core
+    #   sqlalchemy
+tzdata==2025.2
+    # via
+    #   celery
+    #   kombu
+uvicorn==0.32.0
+    # via lct
+vine==5.1.0
+    # via
+    #   amqp
+    #   celery
+    #   kombu
+wcwidth==0.2.13
+    # via prompt-toolkit
