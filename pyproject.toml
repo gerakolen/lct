@@ -1,0 +1,26 @@
+[project]
+name = "lct"
+version = "0.0.1"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn==0.32.0",
+    "sqlalchemy==2.0.36",
+    "celery==5.4.0",
+    "redis==5.1.1",
+    "pydantic==2.9.2",
+    "python-dotenv==1.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "types-pyyaml",
+    "ruff>=0.12.11",
+    "ty>=0.0.1a19",
+]
+
+[tool.uv]
+package = false
