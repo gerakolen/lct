@@ -35,7 +35,7 @@ redis_start:
 
 .PHONY: app_start
 app_start:
-	 uvicorn app.main:app --reload
+	 uvicorn app.main:app --port 8998 --log-level info --reload
 
 .PHONY: celery_worker_start
 celery_worker_start:
