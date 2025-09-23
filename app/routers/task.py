@@ -54,10 +54,10 @@ def get_result(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     if task.status in (TaskStatus.PENDING, TaskStatus.RUNNING):
-        raise HTTPException(status_code=202, detail={"status": task.status.value})
+        raise HTTPException(status_code=400, detail={"status": task.status.value})
     if task.status == TaskStatus.FAILED:
         raise HTTPException(
-            status_code=422, detail={"status": task.status.value, "error": task.error}
+            status_code=400, detail={"status": task.status.value, "error": task.error}
         )
 
     return {"taskid": str(task.id), "status": task.status.value, "result": task.result}
