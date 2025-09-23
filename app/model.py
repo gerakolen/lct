@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from uuid import UUID
 
 
+# Model should be moved to routers
 class DDLStatement(BaseModel):
     statement: str = Field(..., description="SQL CREATE TABLE statement")
 
@@ -27,7 +28,14 @@ class StatusResponse(BaseModel):
     status: str  # RUNNING, DONE, FAILED
 
 
-class ResultResponse(BaseModel):
-    ddl: List[DDLStatement]
-    migrations: List[DDLStatement]  # Reusing DDLStatement for migration statements
-    queries: List[QueryItem]
+# TODO confirm if we need it
+# class ResultResponse(BaseModel):
+#     ddl: List[DDLStatement]
+#     migrations: List[DDLStatement]  # Reusing DDLStatement for migration statements
+#     queries: List[QueryItem]
+
+
+class TaskResultResponse(BaseModel):
+    taskid: str
+    status: str
+    result: Optional[Dict[str, Any]] = None
