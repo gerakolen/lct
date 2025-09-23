@@ -14,9 +14,9 @@ graph TD
     D -->|Broker| E[BrokerImpl]
     D -->|Processes Task| F[Task Worker]
     
-    F -->|Reads Task Data| C
-    F -->|Connects via JDBC| G[LLM]
-    F -->|Stores Result| C
+    F -->  |Reads Task Data| C
+    F <--> |Connects via JDBC| G[LLM]
+    F -->  |Stores Result| C
 
 
     subgraph Backend System
