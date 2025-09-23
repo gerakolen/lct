@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from uuid import UUID
 
 
+# Model should be moved to routers
 class DDLStatement(BaseModel):
     statement: str = Field(..., description="SQL CREATE TABLE statement")
 

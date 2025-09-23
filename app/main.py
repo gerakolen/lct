@@ -1,54 +1,40 @@
-from typing import Dict
+import logging
+from contextlib import asynccontextmanager
+from typing import Dict, AsyncIterator
+from sqlalchemy.orm import sessionmaker
 
-from fastapi import FastAPI, Depends, HTTPException, Query
-from uuid import uuid4, UUID
-from sqlalchemy.orm import Session
-from app.model import NewTaskRequest, TaskResponse, StatusResponse, ResultResponse
-from app.task import process_task
-from app.db import get_db
-from app.schema import Task
-import json
+from fastapi import FastAPI
 
-app = FastAPI()
+from app.config import LCTSettings, lct_settings
+from app.routers import task
+from app.db import create_engine_from_url, create_tables
 
-
-@app.post("/new", response_model=TaskResponse)
-def start_task(request: NewTaskRequest, db: Session = Depends(get_db)):
-    task_id = uuid4()
-    new_task = Task(id=task_id)
-    db.add(new_task)
-    db.commit()
-
-    print(f"Input Data: {request.model_dump()}")
-    # Start Celery task asynchronously
-    # process_task.delay(str(task_id), request.model_dump())
-
-    # Set a timeout (e.g., using Celery's time_limit or a separate watcher)
-    # For now, assume Celery handles it; you can add a scheduler to fail after 20 min
-
-    return {"taskid": task_id}
+logger = logging.getLogger(__name__)
 
 
-@app.get("/status", response_model=StatusResponse)
-def get_status(
-    task_id: UUID = Query(..., alias="task_id"), db: Session = Depends(get_db)
-):
-    task = db.query(Task).filter(Task.id == task_id).first()
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return {"status": task.status}
+def create_app(settings: LCTSettings) -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        engine = create_engine_from_url(settings.db.url)
+        create_tables(engine)
+
+        app.state.engine = engine
+        app.state.settings = settings
+        app.state.SessionLocal = sessionmaker(
+            autocommit=False, autoflush=False, bind=engine
+        )
+
+        yield
+
+        app.state.engine.dispose()
+
+    app = FastAPI(lifespan=lifespan)
+    app.include_router(task.router)
+    return app
 
 
-@app.get("/getresult", response_model=ResultResponse)
-def get_result(
-    task_id: UUID = Query(..., alias="task_id"), db: Session = Depends(get_db)
-):
-    task = db.query(Task).filter(Task.id == task_id).first()
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    if task.status != "DONE":
-        raise HTTPException(status_code=400, detail="Task not done yet")
-    return json.loads(task.result)
+app = create_app(lct_settings)
+
 
 @app.get("/")
 def read_root() -> Dict[str, str]:

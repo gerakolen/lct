@@ -1,7 +1,7 @@
 ENVIRONMENT ?= test
 LCT_URL=http://127.0.0.1:8998
 JSON_FILE=info/sample_request.json
-TASK_ID ?= d45e7618-0424-466e-9980-e74c5042e777
+TASK_ID ?= 0b887633b67c43799325b9ce542a4d07
 
 .PHONY: help
 
@@ -23,9 +23,19 @@ help:
 	@echo "Example:"
 	@echo "  make install ENVIRONMENT=prod"
 
-.PHONY: aaa
-aaa:
-	 pwd
+.PHONY: start
+start:
+	 uvicorn app.main:app --reload
+
+
+.PHONY: redis_up
+redis_up:
+	 docker run -p 6379:6379 redis
+
+.PHONY: celery_worker
+celery_worker:
+	 celery -A app.task worker --loglevel=info
+
 
 .PHONY: new_rq
 new_rq:
