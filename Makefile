@@ -23,17 +23,16 @@ help:
 	@echo "Example:"
 	@echo "  make install ENVIRONMENT=prod"
 
-.PHONY: start
-start:
-	 uvicorn app.main:app --reload
-
-
-.PHONY: redis_up
-redis_up:
+.PHONY: redis_start
+redis_start:
 	 docker run -p 6379:6379 redis
 
-.PHONY: celery_worker
-celery_worker:
+.PHONY: app_start
+app_start:
+	 uvicorn app.main:app --reload
+
+.PHONY: celery_worker_start
+celery_worker_start:
 	 celery -A app.task worker --loglevel=info
 
 
@@ -43,9 +42,17 @@ new_rq:
 		-H "Content-Type: application/json" \
 		-d @$(JSON_FILE)
 
-.PHONY: status
-status:
-	curl $(LCT_URL)/status?task_id=$(TASK_ID)
+.PHONY: poll_status
+poll_status:
+	@while true; do \
+		status=$$(curl -s "$(LCT_URL)/status?task_id=$(TASK_ID)" | jq -r .status); \
+		echo "Status: $$status"; \
+		if [ "$$status" = "COMPLETE" ]; then \
+			echo "Task is COMPLETE!"; \
+			break; \
+		fi; \
+		sleep 1; \
+	done
 
 .PHONY: getresult
 getresult:

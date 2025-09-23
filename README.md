@@ -50,6 +50,44 @@ graph TD
 - The _Task worker_ processes the task, connects to the external systems, generates results, and updates _Task Persistent Storage_ with status `DONE` or `FAILED` and the result.
 - The client polls `/status` to check progress and `/getresult` to retrieve the final output when done.
 
+### Development & Local Execution
+
+1. Run the server and celery worker and redis (for celery). Execute command in separate command cline tabs.
+Ensure that the docker is running on your machine and redis image is pulled.
+```shell
+make redis_start
+make app_start
+make celery_worker_start
+```
+
+2. Submit a task
+```shell
+make new_rq                                                           
+```
+The response should look similar to 
+```shell
+{"taskid":"9d8edbee-5f4a-4259-bd5e-151dfa9d7742"}%
+```
+3. Copy the `taskid` value and pass it into the `poll_status` command, like
+```shell
+make poll_status TASK_ID=9d8edbee-5f4a-4259-bd5e-151dfa9d7742
+```
+The response should look similar to
+```shell
+Status: RUNNING
+Status: RUNNING
+Status: COMPLETE
+Task is COMPLETE!
+```
+
+4. To get task details execute `getresult`
+```shell
+make getresult TASK_ID=9d8edbee-5f4a-4259-bd5e-151dfa9d7742    
+```
+For successfully completed task, the result should look similar to 
+```shell
+{"taskid":"9d8edbee-5f4a-4259-bd5e-151dfa9d7742","status":"COMPLETE","result":{"ok":true,"meta":{"tokens_used":0}}}%
+```
 
 ## Misc
 ### sqlalchemy uuid for sqlite

@@ -14,6 +14,9 @@ from app.schema import Task, TaskStatus
 
 logger = logging.getLogger(__name__)
 
+MOCK_TASK_PROCESSING_TIME_SEC = 2
+# MOCK_TASK_PROCESSING_TIME_SEC = 30
+
 
 # --- Build Celery ---
 def create_celery(settings: LCTSettings) -> Celery:
@@ -68,7 +71,7 @@ def _session() -> Session:
 
 # --- Business logic  ---
 def _do_work(_payload: Dict[str, Any]) -> Dict[str, Any]:
-    sleep(2)
+    sleep(MOCK_TASK_PROCESSING_TIME_SEC)
     # return {"ok": True, "echo": payload, "meta": {"tokens_used": 0}}
     return {"ok": True, "meta": {"tokens_used": 0}}
 

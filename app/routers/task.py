@@ -1,4 +1,3 @@
-import json
 import logging
 from uuid import uuid4, UUID
 
@@ -6,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 
 from sqlalchemy.orm import Session
 from app.db import get_session
-from app.model import TaskResponse, NewTaskRequest, ResultResponse, StatusResponse
+from app.model import TaskResponse, NewTaskRequest, StatusResponse, TaskResultResponse
 from app.schema import Task, TaskStatus
 from ..task import process_task
 
@@ -36,30 +35,29 @@ def start_task(
 
 @router.get("/status", response_model=StatusResponse)
 def get_status(
-    task_id: UUID = Query(..., alias="task_id"),
-    session: Session = Depends(get_session),
+    task_id: UUID = Query(..., alias="task_id"), session: Session = Depends(get_session)
 ):
-    task = session.query(Task).filter(Task.id == task_id).first()
+    task = session.get(Task, str(task_id))
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    # return {"taskid": str(task.id), "status": task.status.value, "error": task.error}
     return {"status": task.status}
 
 
-@router.get("/getresult", response_model=ResultResponse)
+@router.get("/getresult", response_model=TaskResultResponse)
 def get_result(
     task_id: UUID = Query(..., alias="task_id"),
     session: Session = Depends(get_session),
 ):
-    task = session.query(Task).filter(Task.id == task_id).first()
+    task_id_str = str(task_id)
+    task = session.get(Task, task_id_str)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    if task.status != "DONE":
-        raise HTTPException(status_code=400, detail="Task not done yet")
-    task_result = json.loads(task.result)
-    logger.info(f"Task result: {task_result}")
-    response = ResultResponse(
-        ddl=task_result.get("ddl", []),
-        migrations=task_result.get("migrations", []),
-        queries=task_result.get("queries", []),
-    )
-    return response
+    if task.status in (TaskStatus.PENDING, TaskStatus.RUNNING):
+        raise HTTPException(status_code=202, detail={"status": task.status.value})
+    if task.status == TaskStatus.FAILED:
+        raise HTTPException(
+            status_code=422, detail={"status": task.status.value, "error": task.error}
+        )
+
+    return {"taskid": str(task.id), "status": task.status.value, "result": task.result}

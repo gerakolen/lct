@@ -1,4 +1,3 @@
-
 from sqlalchemy import Column, DateTime, Enum, Text
 from sqlalchemy.types import String
 
