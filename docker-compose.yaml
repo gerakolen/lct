@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  api:
+#    build: .
+    image: gerakolen/lct:1.0.0-2e47ef9
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8998 --log-level warning
+    ports:
+      - "8998:8998"
+    depends_on:
+      - redis
+    volumes:
+      - ./lct_config.yaml:/app/lct_config.yaml
+      - tasksdb:/tmp
+    environment:
+      - LCT_CONFIG_PATH=/app/lct_config.yaml
+
+  worker:
+#    build: .
+    image: gerakolen/lct:1.0.0-2e47ef9
+    command: celery -A app.task worker --loglevel=info
+    depends_on:
+      - redis
+    volumes:
+      - ./lct_config.yaml:/app/lct_config.yaml
+      - tasksdb:/tmp
+    environment:
+      - LCT_CONFIG_PATH=/app/lct_config.yaml
+
+  redis:
+    image: redis:6.2.5
+    ports:
+      - "6379:6379"
+
+volumes:
+  tasksdb:

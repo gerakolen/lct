@@ -3,6 +3,9 @@ LCT_URL=http://127.0.0.1:8998
 JSON_FILE=info/sample_request.json
 TASK_ID ?= 0b887633b67c43799325b9ce542a4d07
 
+GIT_HASH := $(shell git rev-parse --short HEAD)
+IMAGE_NAME := gerakolen/lct:1.0.0-$(GIT_HASH)
+
 .PHONY: help
 
 # Help section
@@ -23,6 +26,9 @@ help:
 	@echo "Example:"
 	@echo "  make install ENVIRONMENT=prod"
 
+
+############## APP START COMMANDS ##############
+
 .PHONY: redis_start
 redis_start:
 	 docker run -p 6379:6379 redis
@@ -35,7 +41,16 @@ app_start:
 celery_worker_start:
 	 celery -A app.task worker --loglevel=info
 
+.PHONY: dbuild
+dbuild:
+	 docker build -f Dockerfile . --build-arg GIT_HASH=$(GIT_HASH) -t $(IMAGE_NAME)
 
+.PHONY: dcup
+dcup:
+	 docker compose up
+
+
+############## API TESTING COMMANDS ##############
 .PHONY: new_rq
 new_rq:
 	curl -X POST $(LCT_URL)/new \
@@ -59,7 +74,7 @@ getresult:
 	curl $(LCT_URL)/getresult?task_id=$(TASK_ID)
 
 
-# uv helper commands
+############## UV HELPER COMMANDS ##############
 .PHONY: uv_install
 uv_install:
 	@uv sync --dev
