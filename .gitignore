@@ -8,5 +8,4 @@
 .coverage
 coverage-reports/
 python-test-report.xml
-
-
+__pycache__/
