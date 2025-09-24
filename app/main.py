@@ -3,11 +3,12 @@ from contextlib import asynccontextmanager
 from typing import Dict, AsyncIterator
 from sqlalchemy.orm import sessionmaker
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 
 from app.config import LCTSettings, lct_settings
 from app.routers import task
 from app.db import create_engine_from_url, create_tables
+from app.security import require_basic_auth
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,8 @@ def create_app(settings: LCTSettings) -> FastAPI:
         app.state.engine.dispose()
 
     app = FastAPI(lifespan=lifespan)
-    app.include_router(task.router)
+    # app.include_router(task.router)
+    app.include_router(task.router, dependencies=[Depends(require_basic_auth)])
     return app
 
 

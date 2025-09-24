@@ -3,6 +3,9 @@ LCT_URL=http://127.0.0.1:8998
 JSON_FILE=info/sample_request.json
 TASK_ID ?= 9d8edbee-5f4a-4259-bd5e-151dfa9d7742
 
+USERNAME?=user
+PASSWORD?=password
+
 GIT_HASH := $(shell git rev-parse --short HEAD)
 IMAGE_NAME := gerakolen/lct:1.0.0-$(GIT_HASH)
 
@@ -53,14 +56,15 @@ dcup:
 ############## API TESTING COMMANDS ##############
 .PHONY: new_rq
 new_rq:
-	curl -X POST $(LCT_URL)/new \
+	curl -u $(USERNAME):$(PASSWORD) \
+	    -X POST $(LCT_URL)/new \
 		-H "Content-Type: application/json" \
 		-d @$(JSON_FILE)
 
 .PHONY: poll_status
 poll_status:
 	@while true; do \
-		status=$$(curl -s "$(LCT_URL)/status?task_id=$(TASK_ID)" | jq -r .status); \
+		status=$$(curl -s -u $(USERNAME):$(PASSWORD) "$(LCT_URL)/status?task_id=$(TASK_ID)" | jq -r .status); \
 		echo "Status: $$status"; \
 		if [ "$$status" = "COMPLETE" ]; then \
 			echo "Task is COMPLETE!"; \
@@ -71,7 +75,7 @@ poll_status:
 
 .PHONY: getresult
 getresult:
-	curl $(LCT_URL)/getresult?task_id=$(TASK_ID)
+	curl -u $(USERNAME):$(PASSWORD) $(LCT_URL)/getresult?task_id=$(TASK_ID)
 
 
 ############## UV HELPER COMMANDS ##############

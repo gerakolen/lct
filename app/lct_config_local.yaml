@@ -1,3 +1,6 @@
+auth:
+  username: "user"
+  password: "password"
 db:
   url: "sqlite:////tmp/tasks.db"
 queue:

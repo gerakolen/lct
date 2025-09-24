@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app.db import get_session
 from app.main import app
 from app.schema import Task, TaskStatus
+from app.security import require_basic_auth
 
 TEST_TASK_ID = "9d8edbee-5f4a-4259-bd5e-151dfa9d7742"
 
@@ -26,10 +27,16 @@ def router_session_mock():
 
 
 ################# /status  #################
+def test_task_status_unauthorized(client, router_session_mock, monkeypatch):
+    resp = client.get("/status", params={"task_id": TEST_TASK_ID})
+    assert resp.status_code == 401
+
+
 def test_task_status_pending(client, router_session_mock, monkeypatch):
     mock_task = MagicMock(name="Task")
     mock_task.get.return_value = Task(id=TEST_TASK_ID, status=TaskStatus.PENDING)
     app.dependency_overrides[get_session] = lambda: mock_task
+    app.dependency_overrides[require_basic_auth] = lambda: "test-user"
 
     resp = client.get("/status", params={"task_id": TEST_TASK_ID})
     assert resp.status_code == 200
@@ -40,10 +47,19 @@ def test_task_status_not_found(client, router_session_mock, monkeypatch):
     mock_task = MagicMock(name="Task")
     mock_task.get.return_value = None
     app.dependency_overrides[get_session] = lambda: mock_task
+    app.dependency_overrides[require_basic_auth] = lambda: "test-user"
 
     resp = client.get("/status", params={"task_id": TEST_TASK_ID})
     assert resp.status_code == 404
     assert resp.json() == {"detail": "Task not found"}
+
+
+################# /getresult  #################
+
+
+def test_get_result_unauthorized(client, router_session_mock, monkeypatch):
+    resp = client.get("/getresult", params={"task_id": TEST_TASK_ID})
+    assert resp.status_code == 401
 
 
 def test_get_result_unsuccessful(client, router_session_mock, monkeypatch):
@@ -55,6 +71,7 @@ def test_get_result_unsuccessful(client, router_session_mock, monkeypatch):
         Task(status=TaskStatus.FAILED, error="error text"),
     ]
     app.dependency_overrides[get_session] = lambda: mock_task
+    app.dependency_overrides[require_basic_auth] = lambda: "test-user"
 
     # First call (Not Found)
     resp = client.get("/getresult", params={"task_id": TEST_TASK_ID})
@@ -83,6 +100,7 @@ def test_get_result_successful(client, router_session_mock, monkeypatch):
         id=TEST_TASK_ID, status=TaskStatus.COMPLETE, result={"info": "success"}
     )
     app.dependency_overrides[get_session] = lambda: mock_task
+    app.dependency_overrides[require_basic_auth] = lambda: "test-user"
 
     resp = client.get("/getresult", params={"task_id": TEST_TASK_ID})
     assert resp.status_code == 200
@@ -94,6 +112,11 @@ def test_get_result_successful(client, router_session_mock, monkeypatch):
 
 
 ################# /new  #################
+
+
+def test_new_unauthorized(client, router_session_mock, monkeypatch):
+    resp = client.post("/new", json={})
+    assert resp.status_code == 401
 
 
 def test_new(client, router_session_mock, monkeypatch):
@@ -127,6 +150,7 @@ def test_new(client, router_session_mock, monkeypatch):
 
             mock_task = MagicMock(name="Task")
             app.dependency_overrides[get_session] = lambda: mock_task
+            app.dependency_overrides[require_basic_auth] = lambda: "test-user"
 
             resp = client.post("/new", json=request_data)
             assert resp.status_code == 200
