@@ -6,6 +6,5 @@
 # Python
 .venv
 .coverage
-coverage-reports/
-python-test-report.xml
+/htmlcov/
 __pycache__/

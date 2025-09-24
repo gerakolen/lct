@@ -1,7 +1,7 @@
 ENVIRONMENT ?= test
 LCT_URL=http://127.0.0.1:8998
 JSON_FILE=info/sample_request.json
-TASK_ID ?= 0b887633b67c43799325b9ce542a4d07
+TASK_ID ?= 9d8edbee-5f4a-4259-bd5e-151dfa9d7742
 
 GIT_HASH := $(shell git rev-parse --short HEAD)
 IMAGE_NAME := gerakolen/lct:1.0.0-$(GIT_HASH)
@@ -85,7 +85,7 @@ uv_requirements:
 
 .PHONY: uv_test
 uv_test:
-	@pytest --cov-report xml:coverage-reports/coverage-report.xml --cov=lct ./tests/ --junitxml=python-test-report.xml
+	uv run -m pytest --cov-report=html --cov=app ./tests/app
 
 .PHONY: lint
 lint:
