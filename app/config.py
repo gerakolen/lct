@@ -75,4 +75,3 @@ lct_config_path = os.getenv("LCT_CONFIG_PATH") or "lct_config_local.yaml"
 lct_log_level = os.getenv("LCT_LOG_LEVEL") or "INFO"
 setup_logging(lct_log_level)
 lct_settings = LCTSettings.from_yaml(lct_config_path)
-print(f"lct_settings: {lct_settings}")
