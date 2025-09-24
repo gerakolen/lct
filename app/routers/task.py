@@ -1,5 +1,6 @@
 import logging
-from uuid import uuid4, UUID
+import uuid
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, HTTPException
 
@@ -23,7 +24,7 @@ def start_task(
     request: NewTaskRequest,
     session: Session = Depends(get_session),
 ):
-    task_id = str(uuid4())
+    task_id = str(uuid.uuid4())
     new_task = Task(id=task_id, status=TaskStatus.PENDING)
     with session.begin():
         session.add(new_task)

@@ -27,6 +27,11 @@ def load_config(config_file_name: str) -> dict[str, dict]:
         return yaml.safe_load(profiles_file)
 
 
+class BasicAuthSettings(BaseSettings):
+    username: str
+    password: str
+
+
 class DBSettings(BaseSettings):
     url: str
     model_config = SettingsConfigDict(env_prefix="DB_")
@@ -39,6 +44,7 @@ class QueueSettings(BaseSettings):
 
 
 class LCTSettings(BaseSettings):
+    auth: BasicAuthSettings
     db: DBSettings
     queue: QueueSettings
 
@@ -46,10 +52,15 @@ class LCTSettings(BaseSettings):
     def from_yaml(cls, file_name: str) -> "LCTSettings":
         cfg = load_config(file_name)
 
+        basic_auth_config = cfg.get("auth", {})
         db_config = cfg.get("db", {})
         queue_config = cfg.get("queue", {})
 
         return cls(
+            auth=BasicAuthSettings(
+                username=basic_auth_config.get("username", "no_username"),
+                password=basic_auth_config.get("password", "no_password"),
+            ),
             db=DBSettings(
                 url=db_config.get("url", "no_url"),
             ),
