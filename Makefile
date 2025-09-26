@@ -1,6 +1,7 @@
 ENVIRONMENT ?= test
 LCT_URL=http://127.0.0.1:8998
-JSON_FILE=info/sample_request.json
+SAMPLE_REQUEST_FILE=info/sample_request.json
+INVALID_REQUEST_FILE=info/invalid_request_format.json
 TASK_ID ?= 9d8edbee-5f4a-4259-bd5e-151dfa9d7742
 
 USERNAME?=user
@@ -59,7 +60,14 @@ new_rq:
 	curl -u $(USERNAME):$(PASSWORD) \
 	    -X POST $(LCT_URL)/new \
 		-H "Content-Type: application/json" \
-		-d @$(JSON_FILE)
+		-d @$(SAMPLE_REQUEST_FILE)
+
+.PHONY: new_invalid_rq
+new_invalid_rq:
+	curl -vvv -u $(USERNAME):$(PASSWORD) \
+	    -X POST $(LCT_URL)/new \
+		-H "Content-Type: application/json" \
+		-d @$(INVALID_REQUEST_FILE)
 
 .PHONY: poll_status
 poll_status:
