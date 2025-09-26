@@ -25,10 +25,10 @@ jobs:
           python-version: '3.11'
 
       - name: Install uv
-        run: pip install uv
+        run: pip install uv==0.8.15
 
       - name: Install ruff
-        run: pip install ruff
+        run: pip install ruff==0.13.0
 
       - name: Run ruff (lint and format check)
         run: |
