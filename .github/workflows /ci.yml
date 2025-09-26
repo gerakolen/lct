@@ -1,11 +1,12 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
-    branches: [initial_github_actions]
-#    branches: [main]
-#  pull_request:
-#    branches: [main]
+    branches:
+      - main
+      - initial_github_actions
+
 
 permissions:
   contents: read

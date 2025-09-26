@@ -13,7 +13,7 @@ ENV UV_LINK_MODE=copy
 COPY pyproject.toml /app/
 RUN --mount=type=cache,target=/root/.cache/uv     uv sync --frozen --no-install-project --no-dev --no-editable
 
-# Then, add the rest of the project source code and install it
+# Add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
 ADD app /app/
 RUN --mount=type=cache,target=/root/.cache/uv     uv sync --frozen --no-dev --no-editable
