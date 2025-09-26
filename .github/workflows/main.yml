@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - initial_github_actions
       - more_github_actions
 
 
@@ -23,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.11'
 
       - name: Install uv
         run: pip install uv
@@ -33,6 +32,7 @@ jobs:
 
       - name: Run ruff (lint and format check)
         run: |
+          ruff --version
           ruff check .
           ruff format --check .
 
