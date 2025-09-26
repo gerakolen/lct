@@ -5,19 +5,21 @@ Below is a [**Mermaid** diagram](https://mermaid.live/edit#pako:eNplkn-PmjAYx9_K
 
 ```mermaid
 graph TD
-    A[Client] -->|POST /new| B(FastAPI App)
-    A <--> |GET /status?task_id| B    
-    A <-->|GET /getresult?task_id| B
+    A[Client] -->|POST /new| H[Security Layer]
+    A <--> |GET /status?task_id| H
+    A <-->|GET /getresult?task_id| H
+
+    H <--> B(FastAPI App)
 
     B -->|Stores Task Metadata| C[Tasks Persistent Storage]
     B -->|Sends Task| D[Task Queue]
     D -->|Broker| E[BrokerImpl]
     D -->|Processes Task| F[Task Worker]
     
-    F -->  |Reads Task Data| C
-    F <--> |Connects via JDBC| G[LLM]
-    F -->  |Stores Result| C
-
+    F -->|Reads Task Data| C
+    F <--> |Connects via JDBC| I[Trino]
+    F <--> |Connect via LangChain| G[LLM]
+    F -->|Stores Result| C
 
     subgraph Backend System
         B
@@ -25,10 +27,12 @@ graph TD
         D
         E
         F
+        H
     end
 
     subgraph External
         G
+        I
     end
 ```
 
