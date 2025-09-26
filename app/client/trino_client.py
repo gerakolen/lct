@@ -14,6 +14,7 @@ def get_trino_connection(settings: LCTSettings):
         auth=BasicAuthentication(t.username, t.password),
     )
 
+
 def explain_analyze(sql: str, settings: LCTSettings) -> str:
     q = sql.strip().rstrip(";")
     if not q.upper().startswith("EXPLAIN"):

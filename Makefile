@@ -1,10 +1,10 @@
 ENVIRONMENT ?= test
 LCT_URL=http://127.0.0.1:8998
 
-SAMPLE_REQUEST_FILE=info/sample_request.json
-EXTENDED_REQUEST_FILE=info/extended_request.json
-INVALID_REQUEST_FILE=info/invalid_format_request.json
-SQL_EXPLAIN_FILE=info/sql_explain_request.json
+SAMPLE_REQUEST_FILE=info/request/sample.json
+EXTENDED_REQUEST_FILE=info/request/extended.json
+INVALID_REQUEST_FILE=info/request/invalid_format.json
+SQL_EXPLAIN_FILE=info/request/sql_explain.json
 
 TASK_ID ?= 9d8edbee-5f4a-4259-bd5e-151dfa9d7742
 

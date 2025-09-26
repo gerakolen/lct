@@ -36,11 +36,13 @@ class DBSettings(BaseSettings):
     url: str
     model_config = SettingsConfigDict(env_prefix="DB_")
 
+
 class TrinoSettings(BaseSettings):
     host: str
     port: int
     username: str
     password: str
+
 
 class QueueSettings(BaseSettings):
     broker_url: str

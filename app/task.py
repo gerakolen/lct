@@ -2,12 +2,20 @@ import logging
 import uuid
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Request, Query, HTTPException
 
 from sqlalchemy.orm import Session
 from app.db import get_session
-from app.model import TaskResponse, NewTaskRequest, StatusResponse, TaskResultResponse
+from app.model import (
+    TaskResponse,
+    NewTaskRequest,
+    StatusResponse,
+    TaskResultResponse,
+    ExplainRequest,
+    ExplainResponse,
+)
 from app.schema import Task, TaskStatus
+from ..client import explain_analyze
 from ..task import process_task
 
 
@@ -73,3 +81,10 @@ def get_result(
         )
 
     return {"taskid": str(task.id), "status": task.status.value, "result": task.result}
+
+
+@router.post("/explain", response_model=ExplainResponse)
+def explain(req: ExplainRequest, request: Request):
+    plan = explain_analyze(req.sql, request.app.state.settings)
+    print(plan)
+    return {"plan": plan}
