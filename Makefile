@@ -1,6 +1,11 @@
 ENVIRONMENT ?= test
 LCT_URL=http://127.0.0.1:8998
-JSON_FILE=info/sample_request.json
+
+SAMPLE_REQUEST_FILE=info/request/sample.json
+EXTENDED_REQUEST_FILE=info/request/extended.json
+INVALID_REQUEST_FILE=info/request/invalid_format.json
+SQL_EXPLAIN_FILE=info/request/sql_explain.json
+
 TASK_ID ?= 9d8edbee-5f4a-4259-bd5e-151dfa9d7742
 
 USERNAME?=user
@@ -59,7 +64,14 @@ new_rq:
 	curl -u $(USERNAME):$(PASSWORD) \
 	    -X POST $(LCT_URL)/new \
 		-H "Content-Type: application/json" \
-		-d @$(JSON_FILE)
+		-d @$(EXTENDED_REQUEST_FILE)
+
+.PHONY: new_invalid_rq
+new_invalid_rq:
+	curl -vvv -u $(USERNAME):$(PASSWORD) \
+	    -X POST $(LCT_URL)/new \
+		-H "Content-Type: application/json" \
+		-d @$(INVALID_REQUEST_FILE)
 
 .PHONY: poll_status
 poll_status:
@@ -76,6 +88,19 @@ poll_status:
 .PHONY: getresult
 getresult:
 	curl -u $(USERNAME):$(PASSWORD) $(LCT_URL)/getresult?task_id=$(TASK_ID)
+
+.PHONY: explain
+explain:
+	curl -u $(USERNAME):$(PASSWORD) \
+	    -X POST $(LCT_URL)/explain \
+		-H "Content-Type: application/json" \
+		-d @$(SQL_EXPLAIN_FILE)
+
+############## TESTING UTILS ##############
+
+.PHONY: gen_input
+gen_input:
+	python scripts/generate_input_json.py --ddl 3 --queries 5
 
 
 ############## UV HELPER COMMANDS ##############

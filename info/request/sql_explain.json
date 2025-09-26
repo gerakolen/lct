@@ -1,0 +1,3 @@
+{
+  "sql" : "EXPLAIN ANALYZE SELECT t.* FROM  system.runtime.queries t WHERE t.source = 'dbt-trino-1.8.0' LIMIT 10"
+}

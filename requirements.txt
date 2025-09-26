@@ -16,6 +16,9 @@ certifi==2025.8.3
     # via
     #   httpcore
     #   httpx
+    #   requests
+charset-normalizer==3.4.3
+    # via requests
 click==8.3.0
     # via
     #   celery
@@ -49,8 +52,13 @@ idna==3.10
     # via
     #   anyio
     #   httpx
+    #   requests
 kombu==5.5.4
     # via celery
+lz4==4.4.4
+    # via trino
+orjson==3.11.3 ; platform_python_implementation != 'PyPy'
+    # via trino
 packaging==25.0
     # via kombu
 prompt-toolkit==3.0.52
@@ -65,15 +73,21 @@ pydantic-core==2.23.4
 pydantic-settings==2.10.1
     # via lct
 python-dateutil==2.9.0.post0
-    # via celery
+    # via
+    #   celery
+    #   trino
 python-dotenv==1.0.1
     # via
     #   lct
     #   pydantic-settings
+pytz==2025.2
+    # via trino
 pyyaml==6.0.2
     # via lct
 redis==5.1.1
     # via lct
+requests==2.32.5
+    # via trino
 six==1.17.0
     # via python-dateutil
 sniffio==1.3.1
@@ -82,6 +96,8 @@ sqlalchemy==2.0.36
     # via lct
 starlette==0.38.6
     # via fastapi
+trino==0.336.0
+    # via lct
 typing-extensions==4.15.0
     # via
     #   anyio
@@ -98,6 +114,11 @@ tzdata==2025.2
     # via
     #   celery
     #   kombu
+    #   tzlocal
+tzlocal==5.3.1
+    # via trino
+urllib3==2.5.0
+    # via requests
 uvicorn==0.32.0
     # via lct
 vine==5.1.0
@@ -107,3 +128,5 @@ vine==5.1.0
     #   kombu
 wcwidth==0.2.13
     # via prompt-toolkit
+zstandard==0.25.0
+    # via trino

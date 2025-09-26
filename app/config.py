@@ -37,6 +37,13 @@ class DBSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="DB_")
 
 
+class TrinoSettings(BaseSettings):
+    host: str
+    port: int
+    username: str
+    password: str
+
+
 class QueueSettings(BaseSettings):
     broker_url: str
     result_backend: str
@@ -46,6 +53,7 @@ class QueueSettings(BaseSettings):
 class LCTSettings(BaseSettings):
     auth: BasicAuthSettings
     db: DBSettings
+    trino: TrinoSettings
     queue: QueueSettings
 
     @classmethod
@@ -54,6 +62,7 @@ class LCTSettings(BaseSettings):
 
         basic_auth_config = cfg.get("auth", {})
         db_config = cfg.get("db", {})
+        trino_config = cfg.get("trino", {})
         queue_config = cfg.get("queue", {})
 
         return cls(
@@ -63,6 +72,12 @@ class LCTSettings(BaseSettings):
             ),
             db=DBSettings(
                 url=db_config.get("url", "no_url"),
+            ),
+            trino=TrinoSettings(
+                host=trino_config.get("host", "127.0.0.1"),
+                port=trino_config.get("port", 443),
+                username=trino_config.get("username", "no_username"),
+                password=trino_config.get("password", "no_password"),
             ),
             queue=QueueSettings(
                 broker_url=queue_config.get("broker_url", "no_broker_url"),

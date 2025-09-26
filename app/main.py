@@ -10,6 +10,11 @@ from app.routers import task
 from app.db import create_engine_from_url, create_tables
 from app.security import require_basic_auth
 
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,6 +46,14 @@ app = create_app(lct_settings)
 @app.get("/")
 def read_root() -> Dict[str, str]:
     return {"Hello": "World"}
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(_request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": exc.errors(), "body": exc.body},
+    )
 
 
 if __name__ == "__main__":

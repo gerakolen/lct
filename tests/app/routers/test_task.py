@@ -6,6 +6,8 @@ from fastapi.testclient import TestClient
 
 from app.db import get_session
 from app.main import app
+from app.model import NewTaskRequest
+from app.routers.task import sort_queries_by_runquantity
 from app.schema import Task, TaskStatus
 from app.security import require_basic_auth
 
@@ -24,6 +26,40 @@ def client():
 @pytest.fixture
 def router_session_mock():
     return MagicMock(name="Session")
+
+
+################# utils  #################
+def test_sort_queries_by_runquantity():
+    input_data = {
+        "url": "jdbc:postgresql://localhost:5432/mydb?login=admin&password=secret",
+        "ddl": [],
+        "queries": [
+            {
+                "queryid": uuid.UUID("9d8edbee-5f4a-4259-bd5e-111111111111"),
+                "query": "SELECT * FROM aaaa",
+                "runquantity": 10,
+            },
+            {
+                "queryid": uuid.UUID("9d8edbee-5f4a-4259-bd5e-222222222222"),
+                "query": "SELECT * FROM bcde",
+                "runquantity": 200,
+            },
+            {
+                "queryid": uuid.UUID("9d8edbee-5f4a-4259-bd5e-333333333333"),
+                "query": "SELECT * FROM dddd",
+                "runquantity": 50,
+            },
+        ],
+    }
+    expected_order = [
+        uuid.UUID("9d8edbee-5f4a-4259-bd5e-222222222222"),
+        uuid.UUID("9d8edbee-5f4a-4259-bd5e-333333333333"),
+        uuid.UUID("9d8edbee-5f4a-4259-bd5e-111111111111"),
+    ]
+
+    result = sort_queries_by_runquantity(NewTaskRequest(**input_data))
+    sorted_queryids = [q.queryid for q in result.queries]
+    assert sorted_queryids == expected_order
 
 
 ################# /status  #################
