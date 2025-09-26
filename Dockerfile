@@ -11,12 +11,12 @@ ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 
 COPY pyproject.toml /app/
-RUN --mount=type=cache,target=/root/.cache/uv     uv sync --frozen --no-install-project --no-dev --no-editable
+RUN --mount=type=cache,target=/root/.cache/uv     uv sync --no-install-project --no-dev --no-editable
 
 # Add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
 ADD app /app/
-RUN --mount=type=cache,target=/root/.cache/uv     uv sync --frozen --no-dev --no-editable
+RUN --mount=type=cache,target=/root/.cache/uv     uv sync --no-dev --no-editable
 RUN --mount=type=cache,target=/root/.cache/uv     uv pip install ddtrace~=3.0
 
 FROM python:3.11-slim-bookworm
