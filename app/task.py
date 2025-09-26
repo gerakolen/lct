@@ -15,7 +15,7 @@ from app.model import (
     ExplainResponse,
 )
 from app.schema import Task, TaskStatus
-from ..client import explain_analyze
+from ..client.trino_client import explain_analyze
 from ..task import process_task
 
 
@@ -46,9 +46,7 @@ def start_task(
         session.add(new_task)
 
     # Start Celery task asynchronously
-    sorted_by_quantity = sort_queries_by_runquantity(
-        NewTaskRequest(**request.model_dump())
-    )
+    sorted_by_quantity = sort_queries_by_runquantity(request)
     process_task.delay(task_id, sorted_by_quantity.model_dump())
     return {"taskid": task_id}
 
@@ -86,5 +84,5 @@ def get_result(
 @router.post("/explain", response_model=ExplainResponse)
 def explain(req: ExplainRequest, request: Request):
     plan = explain_analyze(req.sql, request.app.state.settings)
-    print(plan)
+    logger.info(plan)
     return {"plan": plan}
