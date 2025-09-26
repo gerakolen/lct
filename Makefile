@@ -85,6 +85,12 @@ poll_status:
 getresult:
 	curl -u $(USERNAME):$(PASSWORD) $(LCT_URL)/getresult?task_id=$(TASK_ID)
 
+############## TESTING UTILS ##############
+
+.PHONY: gen_input
+gen_input:
+	python scripts/generate_input_json.py --ddl 3 --queries 5
+
 
 ############## UV HELPER COMMANDS ##############
 .PHONY: uv_install
