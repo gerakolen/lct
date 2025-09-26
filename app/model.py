@@ -28,6 +28,12 @@ class StatusResponse(BaseModel):
     status: str  # RUNNING, DONE, FAILED
 
 
+class ExplainRequest(BaseModel):
+    sql: str
+
+class ExplainResponse(BaseModel):
+    plan: str
+
 # TODO confirm if we need it
 # class ResultResponse(BaseModel):
 #     ddl: List[DDLStatement]

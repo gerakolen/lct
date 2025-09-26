@@ -2,12 +2,13 @@ import logging
 import uuid
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Request, Query, HTTPException
 
 from sqlalchemy.orm import Session
 from app.db import get_session
-from app.model import TaskResponse, NewTaskRequest, StatusResponse, TaskResultResponse
+from app.model import TaskResponse, NewTaskRequest, StatusResponse, TaskResultResponse, ExplainRequest, ExplainResponse
 from app.schema import Task, TaskStatus
+from ..client import explain_analyze
 from ..task import process_task
 
 
@@ -17,6 +18,14 @@ router = APIRouter(
     tags=["task"],
     responses={404: {"description": "Not found"}},
 )
+
+
+def sort_queries_by_runquantity(data: NewTaskRequest) -> NewTaskRequest:
+    """
+    Sorts the 'queries' list in the input dictionary by 'runquantity' in desc order.
+    """
+    data.queries = sorted(data.queries, key=lambda q: q.runquantity, reverse=True)
+    return data
 
 
 @router.post("/new", response_model=TaskResponse)
@@ -30,7 +39,10 @@ def start_task(
         session.add(new_task)
 
     # Start Celery task asynchronously
-    process_task.delay(task_id, request.model_dump())
+    sorted_by_quantity = sort_queries_by_runquantity(
+        NewTaskRequest(**request.model_dump())
+    )
+    process_task.delay(task_id, sorted_by_quantity.model_dump())
     return {"taskid": task_id}
 
 
@@ -62,3 +74,11 @@ def get_result(
         )
 
     return {"taskid": str(task.id), "status": task.status.value, "result": task.result}
+
+
+@router.post("/explain", response_model=ExplainResponse)
+def explain(req: ExplainRequest, request: Request):
+    plan = explain_analyze(req.sql, request.app.state.settings)
+    print(plan)
+    return {"plan": plan}
+

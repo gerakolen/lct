@@ -3,6 +3,10 @@ auth:
   password: "password"
 db:
   url: "sqlite:////tmp/tasks.db"
+trino:
+  host: "trino.czxqx2r9.data.bizmrg.com"
+  username: "hackuser"
+  password: "dovq(ozaq8ngt)oS"
 queue:
   broker_url: "redis://localhost:6379/0"
   result_backend: "redis://localhost:6379/1"

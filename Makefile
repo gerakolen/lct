@@ -3,7 +3,8 @@ LCT_URL=http://127.0.0.1:8998
 
 SAMPLE_REQUEST_FILE=info/sample_request.json
 EXTENDED_REQUEST_FILE=info/extended_request.json
-INVALID_REQUEST_FILE=info/invalid_request_format.json
+INVALID_REQUEST_FILE=info/invalid_format_request.json
+SQL_EXPLAIN_FILE=info/sql_explain_request.json
 
 TASK_ID ?= 9d8edbee-5f4a-4259-bd5e-151dfa9d7742
 
@@ -87,6 +88,13 @@ poll_status:
 .PHONY: getresult
 getresult:
 	curl -u $(USERNAME):$(PASSWORD) $(LCT_URL)/getresult?task_id=$(TASK_ID)
+
+.PHONY: explain
+explain:
+	curl -u $(USERNAME):$(PASSWORD) \
+	    -X POST $(LCT_URL)/explain \
+		-H "Content-Type: application/json" \
+		-d @$(SQL_EXPLAIN_FILE)
 
 ############## TESTING UTILS ##############
 
