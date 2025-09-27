@@ -159,7 +159,7 @@ def test_new(client, router_session_mock, monkeypatch):
     fixed_uuid = uuid.UUID(TEST_TASK_ID)
 
     with patch("uuid.uuid4", return_value=fixed_uuid):
-        with patch("app.task.process_task.delay") as mock_delay:
+        with patch("app.worker_task.process_task.delay") as mock_delay:
             request_data = {
                 "url": "jdbc:postgresql://localhost:5432/mydb?login=admin&password=secret",
                 "ddl": [
