@@ -1,7 +1,7 @@
 [project]
 name = "lct"
 version = "0.0.1"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi==0.115.0",
     "uvicorn==0.32.0",
@@ -23,7 +23,7 @@ dev = [
     "pytest-cov",
     "pytest-mock",
     "types-pyyaml",
-    "ruff>=0.12.11",
+    "ruff>=0.13.0",
     "ty>=0.0.1a19",
 ]
 
