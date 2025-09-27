@@ -16,7 +16,7 @@ from app.model import (
 )
 from app.schema import Task, TaskStatus
 from ..client.trino_client import explain_analyze
-from ..task import process_task
+from ..worker_task import process_task
 
 
 logger = logging.getLogger(__name__)
