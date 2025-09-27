@@ -12,7 +12,7 @@ USERNAME?=user
 PASSWORD?=password
 
 GIT_HASH := $(shell git rev-parse --short HEAD)
-IMAGE_NAME := gerakolen/lct:1.0.0-$(GIT_HASH)
+IMAGE_NAME := lct:latest
 
 .PHONY: help
 
@@ -47,7 +47,7 @@ app_start:
 
 .PHONY: celery_worker_start
 celery_worker_start:
-	 celery -A app.task worker --loglevel=info
+	 celery -A app.worker_task worker --loglevel=info
 
 .PHONY: dbuild
 dbuild:

@@ -1,40 +1,43 @@
-# Use a Python image with uv pre-installed
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS uv
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS builder
 
-# Install the project into /app
-WORKDIR /app
-
-# Enable bytecode compilation
-ENV UV_COMPILE_BYTECODE=1
-
-# Copy from the cache instead of linking since it's a mounted volume
-ENV UV_LINK_MODE=copy
-
-COPY pyproject.toml /app/
-RUN --mount=type=cache,target=/root/.cache/uv     uv sync --no-install-project --no-dev --no-editable
-
-# Add the rest of the project source code and install it
-# Installing separately from its dependencies allows optimal layer caching
-ADD app /app/
-RUN --mount=type=cache,target=/root/.cache/uv     uv sync --no-dev --no-editable
-RUN --mount=type=cache,target=/root/.cache/uv     uv pip install ddtrace~=3.0
-
-FROM python:3.11-slim-bookworm
-
-ARG APP_USER_NAME=app
-ARG APP_USER_UID=1000
-ARG APP_USER_GID=1000
-
-RUN groupadd --gid ${APP_USER_GID} ${APP_USER_NAME} \
-  && useradd --uid ${APP_USER_UID} --gid ${APP_USER_GID} ${APP_USER_NAME}
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
 
 WORKDIR /app
 
-COPY --from=uv --chown=${APP_USER_UID}:${APP_USER_GID} /app/.venv /app/.venv
+COPY pyproject.toml ./
 
-# Place executables in the environment at the front of the path
-ENV PATH="/app/.venv/bin:$PATH"
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-dev --no-editable
 
-USER $APP_USER_NAME
+FROM python:3.11-slim-bookworm AS runtime
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+RUN mkdir -p /app
+
+WORKDIR /app
+
+COPY --from=builder /app/.venv /app/.venv
+
+COPY app/ ./app/
+COPY pyproject.toml ./
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PORT=8998
+
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8998/health || exit 1
 
 EXPOSE 8998
+
+# Command to run the application
+# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8998", "--log-level", "info"]
