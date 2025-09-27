@@ -13,6 +13,12 @@ services:
       - tasksdb:/tmp
     environment:
       - LCT_CONFIG_PATH=/lct/app/lct_config.yaml
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8998/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s    
 
   worker:
     image: lct:latest
