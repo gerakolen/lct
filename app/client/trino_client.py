@@ -5,16 +5,15 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 from urllib.parse import urlparse, parse_qs
 
-from app.config import LCTSettings, TrinoSettings
+from app.config import TrinoSettings
 
 
-def get_trino_connection(settings: LCTSettings):
-    t = settings.trino
+def get_trino_connection(settings: TrinoSettings):
     return connect(
-        host=t.host,
-        port=t.port,
-        user=t.username,
-        auth=BasicAuthentication(t.username, t.password),
+        host=settings.host,
+        port=settings.port,
+        user=settings.username,
+        auth=BasicAuthentication(settings.username, settings.password),
     )
 
 
@@ -38,11 +37,11 @@ def extract_connection_details(url: str) -> TrinoSettings:
     return TrinoSettings(host=host, port=port, username=user, password=password)
 
 
-def explain_analyze(sql: str, settings: LCTSettings) -> str:
+def explain_analyze(sql: str, trino_settings: TrinoSettings) -> str:
     q = sql.strip().rstrip(";")
     if not q.upper().startswith("EXPLAIN"):
         q = f"EXPLAIN ANALYZE {q}"
-    with closing(get_trino_connection(settings)) as conn, conn.cursor() as cur:
+    with closing(get_trino_connection(trino_settings)) as conn, conn.cursor() as cur:
         cur.execute(q)
         rows = cur.fetchall()
 
