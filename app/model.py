@@ -12,6 +12,7 @@ class QueryItem(BaseModel):
     queryid: UUID = Field(..., description="Unique query ID")
     query: str = Field(..., description="SQL query")
     runquantity: int = Field(..., ge=0, description="Number of times the query is run")
+    executiontime: int = Field(..., ge=0, description="Execution Time")
 
 
 class NewTaskRequest(BaseModel):

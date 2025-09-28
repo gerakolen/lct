@@ -5,6 +5,7 @@ SAMPLE_REQUEST_FILE=info/request/sample.json
 EXTENDED_REQUEST_FILE=info/request/extended.json
 INVALID_REQUEST_FILE=info/request/invalid_format.json
 SQL_EXPLAIN_FILE=info/request/sql_explain.json
+QUESTH_REQUEST_FILE=info/request/questsH.json
 
 TASK_ID ?= 9d8edbee-5f4a-4259-bd5e-151dfa9d7742
 
@@ -12,7 +13,7 @@ USERNAME?=user
 PASSWORD?=password
 
 GIT_HASH := $(shell git rev-parse --short HEAD)
-IMAGE_NAME := lct:latest
+IMAGE_NAME := gerakolen/lct:1.0.0-$(GIT_HASH)
 
 .PHONY: help
 
@@ -47,7 +48,7 @@ app_start:
 
 .PHONY: celery_worker_start
 celery_worker_start:
-	 celery -A app.worker_task worker --loglevel=info
+	 celery -A app.task worker --loglevel=info
 
 .PHONY: dbuild
 dbuild:
@@ -65,6 +66,14 @@ new_rq:
 	    -X POST $(LCT_URL)/new \
 		-H "Content-Type: application/json" \
 		-d @$(EXTENDED_REQUEST_FILE)
+
+.PHONY: new_questsH
+new_questsH:
+	curl -u $(USERNAME):$(PASSWORD) \
+	    -X POST $(LCT_URL)/new \
+		-H "Content-Type: application/json" \
+		-d @$(QUESTH_REQUEST_FILE)
+
 
 .PHONY: new_invalid_rq
 new_invalid_rq:
