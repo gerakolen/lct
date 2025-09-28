@@ -1,56 +1,64 @@
 {
-  "url": "jdbc:postgresql://localhost:5432/mydb?login=admin&password=secret",
+  "url": "jdbc:trino://trino.czxqx2r9.data.bizmrg.com:443?user=hackuser&password=dovq(ozaq8ngt)oS",
   "ddl": [
     {
-      "statement": "CREATE TABLE mlcm (id INT PRIMARY KEY, mlcm_name VARCHAR(100))"
+      "statement": "CREATE TABLE tzot (order_id INT PRIMARY KEY, user_id INT, amount DECIMAL)"
     },
     {
-      "statement": "CREATE TABLE hrym (order_id INT PRIMARY KEY, user_id INT, amount DECIMAL)"
+      "statement": "CREATE TABLE aljk (id INT PRIMARY KEY, aljk_name VARCHAR(100))"
     },
     {
-      "statement": "CREATE TABLE idmg (order_id INT PRIMARY KEY, user_id INT, amount DECIMAL)"
+      "statement": "CREATE TABLE aqsa (id INT PRIMARY KEY, aqsa_name VARCHAR(100))"
     }
   ],
   "queries": [
     {
-      "queryid": "54d6cf3d-97c4-4b11-9f1f-e2ce8bf426ea",
-      "query": "SELECT u.id, u.name, COUNT(o.order_id) FROM idmg u JOIN hrym o ON u.id = o.user_id GROUP BY u.id",
-      "runquantity": 1199
+      "queryid": "fca93fcb-9d57-4365-84b7-21c85f502a86",
+      "query": "SELECT u.id, u.name, COUNT(o.order_id) FROM aqsa u JOIN aljk o ON u.id = o.user_id GROUP BY u.id",
+      "runquantity": 9878,
+      "executiontime": 8197
     },
     {
-      "queryid": "7d2789b1-ba1f-4044-b131-1507827081f8",
-      "query": "SELECT u.id, u.name, COUNT(o.order_id) FROM mlcm u JOIN idmg o ON u.id = o.user_id GROUP BY u.id",
-      "runquantity": 1773
+      "queryid": "8c709a32-54f4-4de2-89b3-61da927103a2",
+      "query": "SELECT u.id, u.name, COUNT(o.order_id) FROM aqsa u JOIN tzot o ON u.id = o.user_id GROUP BY u.id",
+      "runquantity": 8796,
+      "executiontime": 1269
     },
     {
-      "queryid": "679a78ac-8dcb-4fa3-9ef7-323eee20abd7",
-      "query": "WITH active_hrym AS (SELECT id FROM hrym WHERE active = true) SELECT * FROM idmg WHERE user_id IN (SELECT id FROM active_hrym)",
-      "runquantity": 3149
+      "queryid": "1d2fdb09-5f06-4a93-970a-2a90701961c5",
+      "query": "WITH active_tzot AS (SELECT id FROM tzot WHERE active = true) SELECT * FROM aljk WHERE user_id IN (SELECT id FROM active_tzot)",
+      "runquantity": 8613,
+      "executiontime": 5533
     },
     {
-      "queryid": "68f7fae9-40f9-485d-9293-2bf52a876989",
-      "query": "WITH active_hrym AS (SELECT id FROM hrym WHERE active = true) SELECT * FROM mlcm WHERE user_id IN (SELECT id FROM active_hrym)",
-      "runquantity": 4314
+      "queryid": "4527c7e6-c312-4cf5-a399-b923f5666661",
+      "query": "WITH active_aljk AS (SELECT id FROM aljk WHERE active = true) SELECT * FROM aqsa WHERE user_id IN (SELECT id FROM active_aljk)",
+      "runquantity": 9772,
+      "executiontime": 4333
     },
     {
-      "queryid": "0b2feb4f-6a03-488e-b7e7-152bd185be46",
-      "query": "WITH active_mlcm AS (SELECT id FROM mlcm WHERE active = true) SELECT * FROM hrym WHERE user_id IN (SELECT id FROM active_mlcm)",
-      "runquantity": 3357
+      "queryid": "a51874e4-766c-4ac6-bb8f-e5bc7e3a5206",
+      "query": "WITH active_aljk AS (SELECT id FROM aljk WHERE active = true) SELECT * FROM aqsa WHERE user_id IN (SELECT id FROM active_aljk)",
+      "runquantity": 4184,
+      "executiontime": 1462
     },
     {
-      "queryid": "55dfd7b7-5fd3-4db8-af2b-b5e9e085d85c",
-      "query": "SELECT u.id, u.name, COUNT(o.order_id) FROM idmg u JOIN hrym o ON u.id = o.user_id GROUP BY u.id",
-      "runquantity": 6246
+      "queryid": "bee4eb25-4ad4-4a1a-8c61-5ce940033a17",
+      "query": "SELECT u.id, u.name, COUNT(o.order_id) FROM aljk u JOIN aqsa o ON u.id = o.user_id GROUP BY u.id",
+      "runquantity": 6457,
+      "executiontime": 6132
     },
     {
-      "queryid": "e27e7529-d434-48c6-aa9c-7b96f7d0186e",
-      "query": "WITH active_hrym AS (SELECT id FROM hrym WHERE active = true) SELECT * FROM idmg WHERE user_id IN (SELECT id FROM active_hrym)",
-      "runquantity": 2925
+      "queryid": "c6c23a8e-98f7-4d3c-be4f-4b61908f77da",
+      "query": "SELECT u.id, u.name, COUNT(o.order_id) FROM aljk u JOIN tzot o ON u.id = o.user_id GROUP BY u.id",
+      "runquantity": 5277,
+      "executiontime": 5258
     },
     {
-      "queryid": "ff317e3f-1ee7-41d9-813e-b1384937bd48",
-      "query": "WITH active_hrym AS (SELECT id FROM hrym WHERE active = true) SELECT * FROM idmg WHERE user_id IN (SELECT id FROM active_hrym)",
-      "runquantity": 8873
+      "queryid": "bbbb71bf-2748-46c8-b7a9-49c6311cc903",
+      "query": "WITH active_aljk AS (SELECT id FROM aljk WHERE active = true) SELECT * FROM tzot WHERE user_id IN (SELECT id FROM active_aljk)",
+      "runquantity": 3783,
+      "executiontime": 3729
     }
   ]
 }

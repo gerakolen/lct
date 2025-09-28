@@ -13,6 +13,7 @@ from app.model import (
     TaskResultResponse,
     ExplainRequest,
     ExplainResponse,
+    create_mock_response,
 )
 from app.schema import Task, TaskStatus
 from ..client.trino_client import explain_analyze
@@ -78,8 +79,7 @@ def get_result(
         raise HTTPException(
             status_code=400, detail={"status": task.status.value, "error": task.error}
         )
-
-    return {"taskid": str(task.id), "status": task.status.value, "result": task.result}
+    return create_mock_response()
 
 
 @router.post("/explain", response_model=ExplainResponse)
