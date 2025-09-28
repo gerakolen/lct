@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.db import get_session
 from app.main import app
-from app.model import NewTaskRequest
+from app.model import NewTaskRequest, create_mock_response
 from app.routers.task import sort_queries_by_runquantity
 from app.schema import Task, TaskStatus
 from app.security import require_basic_auth
@@ -143,11 +143,7 @@ def test_get_result_successful(client, router_session_mock, monkeypatch):
 
     resp = client.get("/getresult", params={"task_id": TEST_TASK_ID})
     assert resp.status_code == 200
-    assert resp.json() == {
-        "taskid": TEST_TASK_ID,
-        "status": "COMPLETE",
-        "result": {"info": "success"},
-    }
+    assert resp.json() == create_mock_response().model_dump(mode="json")
 
 
 ################# /new  #################

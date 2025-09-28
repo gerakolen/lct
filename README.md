@@ -101,6 +101,11 @@ For successfully completed task, the result should look similar to
 ```shell
 {"taskid":"9d8edbee-5f4a-4259-bd5e-151dfa9d7742","status":"COMPLETE","result":{"ok":true,"meta":{"tokens_used":0}}}%
 ```
+In case of a failure the response code is `400` and body:
+```shell
+{"detail":{"status":"FAILED","error":"Http503Error: error 503: service unavailable"}}            
+```
+
 
 ## Misc
 
@@ -130,7 +135,6 @@ WHERE NOT Cancelled
 GROUP BY DepTimeBlk
 ORDER BY SUBSTRING(DepTimeBlk FROM 1 FOR 2) ASC;   
 ```
-
 ### sqlalchemy uuid for sqlite
 `from sqlalchemy.dialects.sqlite import UUID` ❌
 https://gist.github.com/gmolveau/7caeeefe637679005a7bb9ae1b5e421e

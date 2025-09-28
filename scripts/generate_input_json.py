@@ -29,6 +29,7 @@ def generate_query_entries(num_queries, table_names):
     for _ in range(num_queries):
         queryid = str(uuid.uuid4())
         runquantity = random.randint(100, 10000)
+        executiontime = random.randint(100, 10000)
         # Reference random tables from the list
         if len(table_names) >= 2:
             t1, t2 = random.sample(table_names, 2)
@@ -40,7 +41,14 @@ def generate_query_entries(num_queries, table_names):
         if random.choice([True, False]) and len(table_names) >= 2:
             t1, t2 = random.sample(table_names, 2)
             query = f"WITH active_{t1} AS (SELECT id FROM {t1} WHERE active = true) SELECT * FROM {t2} WHERE user_id IN (SELECT id FROM active_{t1})"
-        queries.append({"queryid": queryid, "query": query, "runquantity": runquantity})
+        queries.append(
+            {
+                "queryid": queryid,
+                "query": query,
+                "runquantity": runquantity,
+                "executiontime": executiontime,
+            }
+        )
     return queries
 
 
@@ -56,7 +64,7 @@ def main():
     queries = generate_query_entries(args.queries, table_names)
 
     result = {
-        "url": "jdbc:postgresql://localhost:5432/mydb?login=admin&password=secret",
+        "url": "jdbc:trino://trino.czxqx2r9.data.bizmrg.com:443?user=hackuser&password=dovq(ozaq8ngt)oS",
         "ddl": ddl_entries,
         "queries": queries,
     }
