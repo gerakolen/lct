@@ -38,16 +38,19 @@ def test_sort_queries_by_runquantity():
                 "queryid": uuid.UUID("9d8edbee-5f4a-4259-bd5e-111111111111"),
                 "query": "SELECT * FROM aaaa",
                 "runquantity": 10,
+                "executiontime": 12,
             },
             {
                 "queryid": uuid.UUID("9d8edbee-5f4a-4259-bd5e-222222222222"),
                 "query": "SELECT * FROM bcde",
                 "runquantity": 200,
+                "executiontime": 13,
             },
             {
                 "queryid": uuid.UUID("9d8edbee-5f4a-4259-bd5e-333333333333"),
                 "query": "SELECT * FROM dddd",
                 "runquantity": 50,
+                "executiontime": 14,
             },
         ],
     }
@@ -175,11 +178,13 @@ def test_new(client, router_session_mock, monkeypatch):
                         "queryid": "0197a0b2-2284-7af8-9012-fcb21e1a9785",
                         "query": "SELECT u.id, u.name, COUNT(o.order_id) FROM users u JOIN orders o ON u.id = o.user_id GROUP BY u.id",
                         "runquantity": 123,
+                        "executiontime": 12,
                     },
                     {
                         "queryid": "c8ed3309-1acb-439a-b32b-f802ba41db3e",
                         "query": "WITH active_users AS (SELECT id FROM users WHERE active = true) SELECT * FROM orders WHERE user_id IN (SELECT id FROM active_users)",
                         "runquantity": 112233,
+                        "executiontime": 1222,
                     },
                 ],
             }
