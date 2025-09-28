@@ -16,6 +16,7 @@ from app.model import (
 )
 from app.schema import Task, TaskStatus
 from ..client.trino_client import explain_analyze
+from ..config import LCTSettings
 from ..worker_task import process_task
 
 
@@ -83,6 +84,8 @@ def get_result(
 
 @router.post("/explain", response_model=ExplainResponse)
 def explain(req: ExplainRequest, request: Request):
-    plan = explain_analyze(req.sql, request.app.state.settings)
+    settings: LCTSettings = request.app.state.settings
+    trino_settings = settings.trino
+    plan = explain_analyze(req.sql, trino_settings)
     logger.info(plan)
     return {"plan": plan}

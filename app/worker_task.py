@@ -8,6 +8,7 @@ from time import sleep
 
 from sqlalchemy.orm import sessionmaker, Session
 
+from app.client.trino_client import extract_connection_details, explain_analyze
 from app.config import LCTSettings, lct_settings
 from app.db import create_engine_from_url
 from app.schema import Task, TaskStatus
@@ -70,7 +71,16 @@ def _session() -> Session:
 
 
 # --- Business logic  ---
-def _do_work(_payload: Dict[str, Any]) -> Dict[str, Any]:
+def _do_work(payload: Dict[str, Any]) -> Dict[str, Any]:
+    queries = payload.get("queries", "")
+    ddl = payload.get("ddl", [])
+    logger.info(f"Queries: {queries}, DDL: {ddl}")
+    jdbc_url = payload.get("url", "")
+    trino_settings = extract_connection_details(jdbc_url)
+    mock_sql = "EXPLAIN ANALYZE SELECT t.* FROM system.runtime.queries t WHERE t.source = 'dbt-trino-1.8.0' LIMIT 10"
+    explain_result = explain_analyze(mock_sql, trino_settings)
+    logger.info(explain_result)
+
     sleep(MOCK_TASK_PROCESSING_TIME_SEC)
     # return {"ok": True, "echo": payload, "meta": {"tokens_used": 0}}
     return {"ok": True, "meta": {"tokens_used": 0}}

@@ -38,9 +38,9 @@ graph TD
 
 ### Explanation of Components and Flow
 1. **Client**: Sends HTTP requests to the FastAPI app:
-    - `POST /new`: Submits DDL, queries, and JDBC URL; receives a `taskid`.
-    - `GET /status?task_id`: Checks task status (`RUNNING`, `DONE`, `FAILED`).
-    - `GET /getresult?task_id`: Retrieves results (new DDL, migrations, updated queries).
+   - `POST /new`: Submits DDL, queries, and JDBC URL; receives a `taskid`.
+   - `GET /status?task_id`: Checks task status (`RUNNING`, `DONE`, `FAILED`).
+   - `GET /getresult?task_id`: Retrieves results (new DDL, migrations, updated queries).
 2. **FastAPI App**: Handles REST endpoints, validates requests using Pydantic models, and interacts with the SQLite database for task metadata.
 3. **Task Persistent Storage**: Stores task metadata (task ID, status, result as JSON).  _SQLite_ has been chosen for the current implementation.
 4. **Task Queue**: Manages asynchronous task execution. _Celery_ has been chosen for the current implementation.
@@ -63,7 +63,7 @@ make redis_start
 make app_start
 make celery_worker_start
 ```
-1.b Alternatively the app could run as a Docker container. Build the image (it's optional step): 
+1.b Alternatively the app could run as a Docker container. Build the image (it's optional step):
 ```shell
 make dbuild
 ```
@@ -77,7 +77,7 @@ make dcup
 ```shell
 make new_rq                                                           
 ```
-The response should look similar to 
+The response should look similar to
 ```shell
 {"taskid":"9d8edbee-5f4a-4259-bd5e-151dfa9d7742"}%
 ```
@@ -97,12 +97,40 @@ Task is COMPLETE!
 ```shell
 make getresult TASK_ID=9d8edbee-5f4a-4259-bd5e-151dfa9d7742    
 ```
-For successfully completed task, the result should look similar to 
+For successfully completed task, the result should look similar to
 ```shell
 {"taskid":"9d8edbee-5f4a-4259-bd5e-151dfa9d7742","status":"COMPLETE","result":{"ok":true,"meta":{"tokens_used":0}}}%
 ```
 
 ## Misc
+
+###
+The following commend was found in the provided [flights.json](./info/request/flights.json)
+/* Convert time block to sortable format (e.g., "0600-0659" to "06")*/
+The corresponding query is this:
+```sql
+SELECT DepTimeBlk                                                                                  AS DepartureTimeBlock,
+       COUNT(*)                                                                                    AS TotalFlights,
+       SUM(CASE WHEN DepDel15 = 1 THEN 1 ELSE 0 END)                                               AS DelayedDepartures,
+       ROUND(AVG(CASE WHEN DepDel15 = 1 THEN DepDelay END), 2)                                     AS AvgDepartureDelay,
+       ROUND(AVG(CASE WHEN DepDel15 = 1 THEN ArrDelay END), 2)                                     AS AvgArrivalDelay,
+       ROUND(AVG(CASE WHEN DepDel15 = 1 THEN DepDelay - ArrDelay END), 2)                          AS AvgDelayRecoveryMinutes,
+       ROUND(SUM(CASE WHEN DepDel15 = 1 AND ArrDelay < DepDelay THEN 1 ELSE 0 END) * 100.0 /
+             NULLIF(SUM(CASE WHEN DepDel15 = 1 THEN 1 ELSE 0 END), 0),
+             2)                                                                                    AS PercentFlightsRecoveredTime,
+       ROUND(AVG(CASE WHEN DepDel15 = 1 AND ArrDelay < DepDelay THEN DepDelay - ArrDelay END),
+             2)                                                                                    AS AvgMinutesRecovered,
+       ROUND(AVG(CASE WHEN DepDel15 = 1 AND ArrDelay >= DepDelay THEN DepDelay - ArrDelay END), 2) AS AvgDelayGrowth
+FROM flights.public.flights
+WHERE NOT Cancelled
+  AND NOT Diverted
+  AND DepDelay IS NOT NULL
+  AND ArrDelay IS NOT NULL
+  AND DepTimeBlk IS NOT NULL
+GROUP BY DepTimeBlk
+ORDER BY SUBSTRING(DepTimeBlk FROM 1 FOR 2) ASC;   
+```
+
 ### sqlalchemy uuid for sqlite
 `from sqlalchemy.dialects.sqlite import UUID` ❌
 https://gist.github.com/gmolveau/7caeeefe637679005a7bb9ae1b5e421e
