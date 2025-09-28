@@ -41,7 +41,14 @@ def generate_query_entries(num_queries, table_names):
         if random.choice([True, False]) and len(table_names) >= 2:
             t1, t2 = random.sample(table_names, 2)
             query = f"WITH active_{t1} AS (SELECT id FROM {t1} WHERE active = true) SELECT * FROM {t2} WHERE user_id IN (SELECT id FROM active_{t1})"
-        queries.append({"queryid": queryid, "query": query, "runquantity": runquantity, "executiontime": executiontime})
+        queries.append(
+            {
+                "queryid": queryid,
+                "query": query,
+                "runquantity": runquantity,
+                "executiontime": executiontime,
+            }
+        )
     return queries
 
 
