@@ -60,8 +60,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/lct:${{ github.sha }} .
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/lct:latest .
 
       - name: Push Docker image
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/lct:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/lct:latest
