@@ -44,6 +44,7 @@ class TaskResultResponse(BaseModel):
     queries: List[QueryItem]
 
 
+# TODO used only in tests, should be removed
 def create_mock_response() -> TaskResultResponse:
     return TaskResultResponse(
         ddl=[

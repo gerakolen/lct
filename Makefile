@@ -96,7 +96,7 @@ poll_status:
 
 .PHONY: getresult
 getresult:
-	curl -u $(USERNAME):$(PASSWORD) $(LCT_URL)/getresult?task_id=$(TASK_ID)
+	curl -u $(USERNAME):$(PASSWORD) $(LCT_URL)/getresult?task_id=$(TASK_ID) | jq .
 
 .PHONY: explain
 explain:
