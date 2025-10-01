@@ -54,6 +54,12 @@ graph TD
 - The _Task worker_ processes the task, connects to the external systems, generates results, and updates _Task Persistent Storage_ with status `DONE` or `FAILED` and the result.
 - The client polls `/status` to check progress and `/getresult` to retrieve the final output when done.
 
+### Swagger 
+FastAPI framework has built-in support for Swagger UI. It can be found at
+```curl
+http://<endpoint>:8998/docs
+```
+
 ### Development & Local Execution
 
 1.a Run the server and celery worker and redis (for celery). Execute command in separate command cline tabs.

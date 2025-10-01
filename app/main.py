@@ -1,9 +1,10 @@
 import logging
 from contextlib import asynccontextmanager
-from typing import Dict, AsyncIterator
+from typing import AsyncIterator
 from sqlalchemy.orm import sessionmaker
 
 from fastapi import FastAPI, Depends
+from fastapi.responses import HTMLResponse
 
 from app.config import LCTSettings, lct_settings
 from app.routers import task
@@ -43,9 +44,54 @@ def create_app(settings: LCTSettings) -> FastAPI:
 app = create_app(lct_settings)
 
 
-@app.get("/")
-def read_root() -> Dict[str, str]:
-    return {"Hello": "World"}
+@app.get("/", response_class=HTMLResponse)
+def read_root():
+    html_content = """
+    <html>
+        <head>
+            <title>LCT App Info</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; }
+                pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+            </style>
+        </head>
+        <body>
+            <h2>Team: fortuna</h2>
+            <p>LCT app version 1.0.0</p>
+            <h3>Available endpoints:</h3>
+            <h4>/docs - Swagger UI</h4>
+            <h4>/new - launch a task</h4>
+            <pre>
+curl -u "$USERNAME:$PASSWORD" \\
+    -X POST http://lct-host:8998/new \\
+    -H "Content-Type: application/json" \\
+    -d '{
+      "url": "jdbc:trino://trino.czxqx2r9.data.bizmrg.com:443?user=admint&password=secret",
+      "ddl": [
+        {"statement": "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100))"}
+      ],
+      "queries": [
+        {
+          "queryid": "0197a0b2-2284-7af8-9012-fcb21e1a9785",
+          "query": "SELECT u.id, u.name, COUNT(o.order_id) FROM users u JOIN orders o ON u.id = o.user_id GROUP BY u.id",
+          "runquantity": 123,
+          "executiontime": 12
+        }
+      ]
+    }'
+            </pre>
+            <h4>/status - check the status of a task</h4>
+            <pre>
+curl -s -u $(USERNAME):$(PASSWORD) http://lct-host:8998/status?task_id=$(TASK_ID)
+            </pre>
+            <h4>/getresult - get results of a task</h4>
+            <pre>
+curl -u $(USERNAME):$(PASSWORD)  http://lct-host:8998/getresult?task_id=$(TASK_ID) | jq .
+            </pre>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
 
 
 @app.exception_handler(RequestValidationError)
