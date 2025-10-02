@@ -9,13 +9,15 @@ from urllib3.util.retry import Retry
 # =========================
 # Yandex Cloud OpenAI-compatible API (для gpt-oss-20b/120b)
 # =========================
-FOLDER_ID = os.getenv("YC_FOLDER_ID", "").strip()
+# TODO move to config
+FOLDER_ID = os.getenv("YC_FOLDER_ID", "b1gio33fets4d7v15paj").strip()
 BASE_URL = os.getenv("YC_OPENAI_BASE", "https://llm.api.cloud.yandex.net/v1")
 # для OSS-моделей в /v1/chat/completions чаще достаточно короткого имени "gpt-oss-120b"
 # но ты используешь переменную YC_MODEL_URI — оставляю её как единственный источник
 MODEL = os.getenv("YC_MODEL_URI", f"gpt://{FOLDER_ID}/gpt-oss-120b").strip()
 IAM_TOKEN = os.getenv("YC_IAM_TOKEN", "").strip()
-API_KEY = os.getenv("YC_API_KEY", "").strip()
+# TODO move to config
+API_KEY = os.getenv("YC_API_KEY", "AQVN3fl5zpSi63_7DGVKUn3nrm7BnKNdP-8cZVng").strip()
 
 if not (IAM_TOKEN or API_KEY):
     raise RuntimeError("Нужно выставить YC_IAM_TOKEN или YC_API_KEY")
@@ -229,13 +231,20 @@ def build_contract_text(
 - **WRONG**: `{"queryid":"abc","statement":"SELECT ..."}`
 """.strip()
 
+    catalog_ = req['catalog']
+    source_schema_ = req['source_schema']
+    target_schema_ = req['target_schema']
+    ddl_dump = json.dumps(full_payload['ddl'], ensure_ascii=False)
+    queries_dump = json.dumps(full_payload['queries'], ensure_ascii=False, default=str)
+    context_dump = json.dumps(full_context, ensure_ascii=False)
+
     CONTRACT = f"""
 ## CONTRACT (strictly):
 
-- **catalog**: `{req['catalog']}, source_schema: {req['source_schema']}, target_schema: {req['target_schema']}`
-- **DDL**: the first string always must be: `CREATE SCHEMA {req['catalog']}.{req['target_schema']}`
-- **MIGRATIONS**: only INSERT/CTAS from `{req['catalog']}.{req['source_schema']} → {req['catalog']}.{req['target_schema']}`
-- **QUERIES**: link ONLY to `{req['catalog']}.{req['target_schema']}` (do not use the old schema)
+- **catalog**: `{catalog_}, source_schema: {source_schema_}, target_schema: {target_schema_}`
+- **DDL**: the first string always must be: `CREATE SCHEMA {catalog_}.{target_schema_}`
+- **MIGRATIONS**: only INSERT/CTAS from `{catalog_}.{source_schema_} → {catalog_}.{target_schema_}`
+- **QUERIES**: link ONLY to `{catalog_}.{target_schema_}` (do not use the old schema)
 - **Anti-patterns are prohibited**:
     - `SELECT *` from physical tables (allowed from CTE or in sampler with `LIMIT` only)
     - Functions `month()` or `date_trunc()` in `WHERE` (use ranges).
@@ -244,7 +253,7 @@ def build_contract_text(
 - Return FULL VALID JSON in one batch. NO EXPLANATIONS.
 
 ## ADDITINONALLY OBLIGATORY:
-- Scan the payload and write FULL LIST of original tables from `{req['catalog']}.{req['source_schema']}.*`, which encounter in `FROM` or `JOIN`
+- Scan the payload and write FULL LIST of original tables from `{catalog_}.{source_schema_}.*`, which encounter in `FROM` or `JOIN`
 - For each of them create an object in `catalog.target_schema` (Parquet; for facts/links — partitioning over data, in case of hot joins — bucket over stable key) and add migration INSERT (with explicit columns list).
 - In `queries[]` save original `queryid` and use key  "query" (NOT `statement`)
 - Avoid `ORDER BY random()`, `CROSS JOIN (VALUES ...)`, doubling `UNION ALL`, do not apply date functions in `WHERE`
@@ -253,7 +262,7 @@ def build_contract_text(
 
 ## DDL POLICY (STRICTLY, SCHEMA-AWARE):
 - Use ONLY ICEBERG-style: `WITH (format='PARQUET', partitioning=ARRAY[...]);`. DO NOT USE `bucketed_by`, `bucket_count`, `partitioned_by`
-- Before DDL creation for each table from `{req['catalog']}.{req['source_schema']}.*` estimate its list of columns based on payload or context:
+- Before DDL creation for each table from `{catalog_}.{source_schema_}.*` estimate its list of columns based on payload or context:
     - Allowed partitioning only over these fields, which are gauranteed existing in this table (e.g., `payment_dt` only if the field certainly exists)
     - If not sure — do no include the field in partitioning
 - If date-pruning is needed, but date is missing, use denormalization:
@@ -265,16 +274,16 @@ def build_contract_text(
     - `l_author_quest` / `l_quest_category` / `l_quest_episode`: `ARRAY['bucket(quest_id, 50)']`
     - `h_*` and small `s_*`: without any partitioning or bucketing
 - In the `migrations[]` always specify explicit lists of columns (NOT `SELECT *`)
-- DDL always at the beginning: `CREATE SCHEMA {req['catalog']}.{req['source_schema']}`. `QUERIES` must link only to `{req['catalog']}.{req['target_schema']}.*`
+- DDL always at the beginning: `CREATE SCHEMA {catalog_}.{source_schema_}`. `QUERIES` must link only to `{catalog_}.{target_schema_}.*`
 
 ## PAYLOAD DDL:
 ```
-{json.dumps(full_payload['ddl'], ensure_ascii=False)}
+{ddl_dump}
 ```
 
 ## PAYLOAD QUERIES:
 ```
-{json.dumps(full_payload['queries'], ensure_ascii=False)}
+{queries_dump}
 ```
 
 ## CONTEXT PACK FIELDS EXPLANATION:
@@ -295,7 +304,7 @@ def build_contract_text(
 
 ## CONTEXT PACK:
 ```
-{json.dumps(full_context, ensure_ascii=False)}
+{context_dump}
 ```
 
 ## EXAMPLES / ANCHORS:
