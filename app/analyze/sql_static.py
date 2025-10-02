@@ -1,3 +1,4 @@
+# sql_static.py
 from __future__ import annotations
 
 import json
@@ -79,7 +80,7 @@ def _normalize_identifier(x: str) -> str:
 
 
 def _split_qualified(
-        parts: List[str],
+    parts: List[str],
 ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     """
     ["catalog","schema","table"] -> (cat, sch, tab)
@@ -118,7 +119,7 @@ def _alias_name(expr) -> Optional[str]:
 
 
 def _make_tabref_from_expr(
-        expr: E.Expression, default_catalog: Optional[str], default_schema: Optional[str]
+    expr: E.Expression, default_catalog: Optional[str], default_schema: Optional[str]
 ) -> Optional[TableRef]:
     """
     Корректно извлекаем catalog/schema/table ТОЛЬКО из свойств sqlglot.Table:
@@ -154,7 +155,7 @@ def _make_tabref_from_expr(
 
 
 def _extract_default_catalog_schema_from_ddl(
-        ddl_list: List["DDLStmt"],
+    ddl_list: List["DDLStmt"],
 ) -> Tuple[Optional[str], Optional[str]]:
     """
     Возвращает (catalog, schema) из ПЕРВОГО встреченного CREATE TABLE.
@@ -231,7 +232,7 @@ def _to_query_stat_list(queries_raw: List[Dict]) -> List[QueryStat]:
 
 
 def _bases_of_any(
-        expr: E.Expression, default_catalog: Optional[str], default_schema: Optional[str]
+    expr: E.Expression, default_catalog: Optional[str], default_schema: Optional[str]
 ) -> List[str]:
     """
     Recursively return base tables (FIZ имена, если доступны).
@@ -310,14 +311,14 @@ def _bases_of_any(
 
 
 def _list_base_tables_from_select(
-        sel: E.Select, default_catalog: Optional[str], default_schema: Optional[str]
+    sel: E.Select, default_catalog: Optional[str], default_schema: Optional[str]
 ) -> List[str]:
     """Collect all base tables referenced inside a Select."""
     bases: List[str] = []
     from_expr = sel.args.get("from")
     if from_expr:
         for src in from_expr.find_all(
-                (E.Table, E.Subquery, E.Select, E.Alias, E.Paren)
+            (E.Table, E.Subquery, E.Select, E.Alias, E.Paren)
         ):
             bases.extend(_bases_of_any(src, default_catalog, default_schema))
     for j in sel.args.get("joins", []) or []:
@@ -330,7 +331,7 @@ def _list_base_tables_from_select(
 
 
 def _resolve_alias_maps(
-        tree: E.Expression, default_catalog: Optional[str], default_schema: Optional[str]
+    tree: E.Expression, default_catalog: Optional[str], default_schema: Optional[str]
 ) -> Tuple[Dict[str, List[str]], Dict[str, List[str]]]:
     """
     Build:
@@ -390,10 +391,10 @@ def _resolve_alias_maps(
 
 
 def _expand_to_physical(
-        bases: List[str],
-        alias_map: Dict[str, List[str]],
-        cte_map: Dict[str, List[str]],
-        short2fqtn: Dict[str, str],
+    bases: List[str],
+    alias_map: Dict[str, List[str]],
+    cte_map: Dict[str, List[str]],
+    short2fqtn: Dict[str, str],
 ) -> List[str]:
     """
     Разворачивает список баз (FQTN/CTE/алиас/короткое) в список **физических** имён (2 или 3 части).
@@ -450,10 +451,10 @@ def _walk_eq_pairs(expr: E.Expression) -> List[Tuple[E.Column, E.Column]]:
 
 
 def _col_phys_bases(
-        col: E.Column,
-        sel_alias_map_phys: Dict[str, List[str]],
-        sel_bases_phys: List[str],
-        short2fqtn: Dict[str, str],
+    col: E.Column,
+    sel_alias_map_phys: Dict[str, List[str]],
+    sel_bases_phys: List[str],
+    short2fqtn: Dict[str, str],
 ) -> List[str]:
     """Вернуть физические базы для конкретной колонки в рамках SELECT."""
     # с префиксом?
@@ -471,12 +472,12 @@ def _col_phys_bases(
 
 
 def _join_key_pairs_for_select(
-        sel: E.Select,
-        alias_map_phys: Dict[str, List[str]],
-        cte_map_phys: Dict[str, List[str]],
-        short2fqtn: Dict[str, str],
-        default_catalog: Optional[str],
-        default_schema: Optional[str],
+    sel: E.Select,
+    alias_map_phys: Dict[str, List[str]],
+    cte_map_phys: Dict[str, List[str]],
+    short2fqtn: Dict[str, str],
+    default_catalog: Optional[str],
+    default_schema: Optional[str],
 ) -> List[Tuple[str, str, str, str]]:
     """
     Достаёт пары (A, B, colA, colB), где A/B — физические таблицы (schema.table|catalog.schema.table),
@@ -811,14 +812,14 @@ def build_context_pack(ddl: List[Dict], queries: List[Dict]) -> Dict:
 
         # Window functions (глобально по запросу)
         for win in tree.find_all(E.Window):
-            func = win.this
-            name = None
+            func = str(win.this)
+            
             try:
-                name = getattr(func, "name", None)
+                name = func.split('(')[0]
             except Exception:
                 name = None
-            name = (name or "").upper()
-            if name:
+            
+            if name is not None:
                 window_functions[name] += q.runquantity
 
     # 3) Build join graph and extract hot cliques (physical only)
