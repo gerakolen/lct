@@ -607,21 +607,9 @@ def build_context_pack(ddl: List[Dict], queries: List[Dict]) -> Dict:
             tree = sqlglot.parse_one(d.statement, read="trino")
         except Exception:
             continue
-        for ct in tree.find_all(E.Create):
-            if not isinstance(ct.this, E.Table):
-                continue
-            ids = [
-                _normalize_identifier(p.name) for p in ct.this.find_all(E.Identifier)
-            ]
-            c, s, t = _split_qualified(ids)
-            if t:
-                ddl_tables.append(
-                    {
-                        "catalog": c or default_catalog,
-                        "schema": s or default_schema,
-                        "table": t,
-                    }
-                )
+        for ct in tree.find_all(E.Table):
+            t = f'{default_catalog}.{default_schema}.{ct.this.this}'
+            ddl_tables.append(t)
 
     # 2) Walk queries
     table_scan_freq: Counter = Counter()
