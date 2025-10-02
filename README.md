@@ -17,7 +17,7 @@ graph TD
     D -->|Processes Task| F[Task Worker]
     
     F -->|Reads Task Data| C
-    F <--> |Connects via JDBC| I[Trino]
+    F -.-> |Connects via JDBC| I[Trino]:::dashed
     F <--> |Connect via LangChain| G[LLM]
     F -->|Stores Result| C
 
@@ -34,6 +34,9 @@ graph TD
         G
         I
     end
+
+    %% Style for dashed rectangle
+    classDef dashed stroke-dasharray: 5 5;
 ```
 
 ### Explanation of Components and Flow

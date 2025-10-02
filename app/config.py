@@ -47,6 +47,7 @@ class TrinoSettings(BaseSettings):
 class QueueSettings(BaseSettings):
     broker_url: str
     result_backend: str
+    task_time_limit_secs: int
     model_config = SettingsConfigDict(env_prefix="QU_")
 
 
@@ -82,6 +83,7 @@ class LCTSettings(BaseSettings):
             queue=QueueSettings(
                 broker_url=queue_config.get("broker_url", "no_broker_url"),
                 result_backend=queue_config.get("result_backend", "no_result_backend"),
+                task_time_limit_secs=queue_config.get("task_time_limit_secs", 900),
             ),
         )
 

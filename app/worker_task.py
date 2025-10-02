@@ -3,20 +3,23 @@ import uuid
 from typing import Dict, Any
 
 from celery import Celery
+from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
 from celery.signals import worker_process_init, worker_process_shutdown
 from time import sleep
 
 from sqlalchemy.orm import sessionmaker, Session
 
-from app.client.trino_client import extract_connection_details, explain_analyze
+from app.client.trino_client import extract_connection_details
 from app.config import LCTSettings, lct_settings
 from app.db import create_engine_from_url
 from app.schema import Task, TaskStatus
 
 logger = logging.getLogger(__name__)
 
-MOCK_TASK_PROCESSING_TIME_SEC = 2
-# MOCK_TASK_PROCESSING_TIME_SEC = 30
+TIME_SAFETY_MARGIN_SECS = 10
+SLEEP_INTERVAL_SECS = 5
+MOCK_TASK_PROCESSING_TICS: int = 2
+# MOCK_TASK_PROCESSING_TICS: int = 500
 
 
 # --- Build Celery ---
@@ -34,7 +37,8 @@ def create_celery(settings: LCTSettings) -> Celery:
         task_track_started=True,
         task_acks_late=True,
         worker_prefetch_multiplier=1,
-        # task_time_limit=20,
+        task_soft_time_limit=settings.queue.task_time_limit_secs,
+        task_time_limit=settings.queue.task_time_limit_secs + TIME_SAFETY_MARGIN_SECS,
     )
     return app
 
@@ -100,11 +104,16 @@ def _do_work(payload: Dict[str, Any]) -> Dict[str, Any]:
     logger.info(f"Queries: {queries}, DDL: {ddl}")
     jdbc_url = payload.get("url", "")
     trino_settings = extract_connection_details(jdbc_url)
-    mock_sql = "EXPLAIN ANALYZE SELECT t.* FROM system.runtime.queries t WHERE t.source = 'dbt-trino-1.8.0' LIMIT 10"
-    explain_result = explain_analyze(mock_sql, trino_settings)
-    logger.info(explain_result)
+    logger.info(f"Trino settings: {trino_settings}")
+    # comment out because we don't interact directly with trino now
+    # mock_sql = "EXPLAIN ANALYZE SELECT t.* FROM system.runtime.queries t WHERE t.source = 'dbt-trino-1.8.0' LIMIT 10"
+    # explain_result = explain_analyze(mock_sql, trino_settings)
+    # logger.info(explain_result)
 
-    sleep(MOCK_TASK_PROCESSING_TIME_SEC)
+    for i in range(1, MOCK_TASK_PROCESSING_TICS + 1):
+        logger.info(f"sleeping for {SLEEP_INTERVAL_SECS * i} seconds")
+        sleep(SLEEP_INTERVAL_SECS)
+
     return mock_response_for_do_work()
 
 
@@ -141,6 +150,16 @@ def process_task(self, task_id: str, payload: Dict[str, Any]) -> None:
     # 2) Interact with Trino & LLM
     try:
         result = _do_work(payload)
+    except (SoftTimeLimitExceeded, TimeLimitExceeded):
+        logger.error(f"Time limit exceeded for: {task_id}")
+        with _session() as s:
+            t = s.get(Task, task_id)
+            if t:
+                t.status = TaskStatus.FAILED
+                t.error = "Timeout exceeded"
+                s.commit()
+        return
+
     except Exception as e:
         # 3b) Mark failed on exception
         with _session() as s:
