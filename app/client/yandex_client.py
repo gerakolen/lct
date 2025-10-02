@@ -11,6 +11,8 @@ from urllib3.util.retry import Retry
 # =========================
 FOLDER_ID = os.getenv("YC_FOLDER_ID", "").strip()
 BASE_URL = os.getenv("YC_OPENAI_BASE", "https://llm.api.cloud.yandex.net/v1")
+# для OSS-моделей в /v1/chat/completions чаще достаточно короткого имени "gpt-oss-120b"
+# но ты используешь переменную YC_MODEL_URI — оставляю её как единственный источник
 MODEL = os.getenv("YC_MODEL_URI", f"gpt://{FOLDER_ID}/gpt-oss-120b").strip()
 IAM_TOKEN = os.getenv("YC_IAM_TOKEN", "").strip()
 API_KEY = os.getenv("YC_API_KEY", "").strip()
@@ -24,7 +26,7 @@ HEADERS = {
     "x-data-logging-enabled": "false",
 }
 if FOLDER_ID:
-    HEADERS["x-folder-id"] = FOLDER_ID
+    HEADERS["x-folder-id"] = FOLDER_ID  # важно при Api-Key
 
 # =========================
 # Сеть/ретраи/таймауты
@@ -134,31 +136,40 @@ def build_contract_text(
 ) -> str:
     prefer_ids = ", ".join(payload_qids) if payload_qids else "(нет queryid)"
     EXAMPLES = r"""
-МИНИ-ПРИМЕРЫ (следуй стилю):
+## MINI-EXAMPLES (follow the style):
 
-[DDL — ТОЛЬКО ICEBERG]
+### [DDL — ICEBERG ONLY]
 - CREATE SCHEMA:
-  {"statement": "CREATE SCHEMA {catalog}.{target_schema}"}
+```
+    {"statement": "CREATE SCHEMA {catalog}.{target_schema}"}
+```
 
-- H-таблица без партиционирования/бакетинга:
-  {"statement": "CREATE TABLE {catalog}.{target_schema}.h_client
-                 WITH (format='PARQUET')
-                 AS SELECT * FROM {catalog}.{source_schema}.h_client WHERE 1=0"}
+- H-table without partitions/bucketing:
+```
+    {"statement": "CREATE TABLE {catalog}.{target_schema}.h_client
+                WITH (format='PARQUET')
+                AS SELECT * FROM {catalog}.{source_schema}.h_client WHERE 1=0"}
+```
 
-- Линк с payment_dt ЕСТЬ в исходной таблице:
-  {"statement": "CREATE TABLE {catalog}.{target_schema}.l_payment_client
+- Link with payment_dt `EXISTS` in the default table:
+```
+    {"statement": "CREATE TABLE {catalog}.{target_schema}.l_payment_client
                  WITH (format='PARQUET',
                        partitioning = ARRAY['payment_dt', 'bucket(payment_id, 50)'])
                  AS SELECT * FROM {catalog}.{source_schema}.l_payment_client WHERE 1=0"}
+```
 
-- Линк без payment_dt → ТОЛЬКО бакет по payment_id:
-  {"statement": "CREATE TABLE {catalog}.{target_schema}.l_quest_payment
+- Link without payment_dt → ONLY bucket over payment_id:
+```
+    {"statement": "CREATE TABLE {catalog}.{target_schema}.l_quest_payment
                  WITH (format='PARQUET',
                        partitioning = ARRAY['bucket(payment_id, 50)'])
                  AS SELECT * FROM {catalog}.{source_schema}.l_quest_payment WHERE 1=0"}
+```
 
-- (Опционально) Денормализация даты в линк (если нужен date-pruning):
-  {"statement": "CREATE TABLE {catalog}.{target_schema}.l_excursion_payment
+- (Optional) Date denormalization into link (if date-pruning needed):
+```
+    {"statement": "CREATE TABLE {catalog}.{target_schema}.l_excursion_payment
                  WITH (format='PARQUET',
                        partitioning = ARRAY['payment_dt', 'bucket(payment_id, 50)'])
                  AS
@@ -169,28 +180,34 @@ def build_contract_text(
                  JOIN {catalog}.{source_schema}.l_payment_client   lpc
                    ON lep.payment_id = lpc.payment_id
                  WHERE 1=0"}
+```
 
-[Миграции — перечисляй колонки явно]
-  {"statement": "INSERT INTO {catalog}.{target_schema}.l_payment_client (payment_id, client_id, payment_dt, is_repeat_purchase)
+### [Migrations — enumerate columns explicitly]
+```
+    {"statement": "INSERT INTO {catalog}.{target_schema}.l_payment_client (payment_id, client_id, payment_dt, is_repeat_purchase)
                  SELECT payment_id, client_id, payment_dt, is_repeat_purchase
                  FROM {catalog}.{source_schema}.l_payment_client"}
 
-  {"statement": "INSERT INTO {catalog}.{target_schema}.l_quest_payment (payment_id, quest_id)
+    {"statement": "INSERT INTO {catalog}.{target_schema}.l_quest_payment (payment_id, quest_id)
                  SELECT payment_id, quest_id
                  FROM {catalog}.{source_schema}.l_quest_payment"}
+```
 
-  -- Для денормализации даты:
-  {"statement": "INSERT INTO {catalog}.{target_schema}.l_excursion_payment (payment_id, excursion_id, payment_dt)
+  -- For date denormalization:
+```
+    {"statement": "INSERT INTO {catalog}.{target_schema}.l_excursion_payment (payment_id, excursion_id, payment_dt)
                  SELECT lep.payment_id, lep.excursion_id, lpc.payment_dt
                  FROM {catalog}.{source_schema}.l_excursion_payment lep
                  JOIN {catalog}.{source_schema}.l_payment_client   lpc
                    ON lep.payment_id = lpc.payment_id"}
+```
 
-[Фильтры по дате для pruning]
-- ПЛОХО: WHERE month(payment_dt) = 6
-- ХОРОШО: WHERE payment_dt >= DATE '2024-06-01' AND payment_dt < DATE '2024-07-01'
+### [Date filters for pruning]
+- **BAD**: WHERE month(payment_dt) = 6
+- **GOOD**: WHERE payment_dt >= DATE '2024-06-01' AND payment_dt < DATE '2024-07-01'
 
-[Кварталы с диапазонами]
+### [Quartals with ranges]
+```
   WHERE ts >= TIMESTAMP '2024-01-01' AND ts < TIMESTAMP '2024-07-01'
   SELECT CASE
            WHEN ts >= TIMESTAMP '2024-01-01' AND ts < TIMESTAMP '2024-04-01' THEN 'Q1'
@@ -198,67 +215,90 @@ def build_contract_text(
          END AS quarter, SUM(x)
   FROM ...
   GROUP BY 1
+```
 
-[EXISTS вместо IN]
-- ПЛОХО: WHERE user_id IN (SELECT user_id FROM {catalog}.{source_schema}.events WHERE ...)
-- ХОРОШО: WHERE EXISTS (SELECT 1 FROM {catalog}.{source_schema}.events e WHERE e.user_id = f.user_id AND ...)
+### [`EXISTS` instead of `IN`]
+- **BAD**: `WHERE user_id IN (SELECT user_id FROM {catalog}.{source_schema}.events WHERE ...)`
+- **GOOD**: `WHERE EXISTS (SELECT 1 FROM {catalog}.{source_schema}.events e WHERE e.user_id = f.user_id AND ...)`
 
-[queries: ключи]
-- ПРАВИЛЬНО:   {"queryid":"abc","query":"SELECT ..."}
-- НЕПРАВИЛЬНО: {"queryid":"abc","statement":"SELECT ..."}
+### [queries: keys]
+- **CORRECT**: `{"queryid":"abc","query":"SELECT ..."}`
+- **WRONG**: `{"queryid":"abc","statement":"SELECT ..."}`
 """.strip()
 
     CONTRACT = f"""
-КОНТРАКТ (строго):
-- catalog: {req['catalog']}, source_schema: {req['source_schema']}, target_schema: {req['target_schema']}.
-- DDL: первой строкой всегда CREATE SCHEMA {req['catalog']}.{req['target_schema']}.
-- MIGRATIONS: только INSERT/CTAS из {req['catalog']}.{req['source_schema']} → {req['catalog']}.{req['target_schema']}.
-- QUERIES: ссылаются ТОЛЬКО на {req['catalog']}.{req['target_schema']}.* (старую схему НЕ использовать).
-- Анти-паттерны запрещены:
-  • SELECT * из физических таблиц (разрешено только из CTE или в семплере с LIMIT).
-  • Функции month()/date_trunc() в WHERE (используй диапазоны).
-  • Не делай ORDER BY random() в финальном запросе (только в семплере с LIMIT).
-- Сохраняй queryid из PAYLOAD при переписывании.
-- Верни ПОЛНЫЙ ВАЛИДНЫЙ JSON одной порцией. Никаких пояснений/Markdown.
+## CONTRACT (strictly):
 
-ДОПОЛНИТЕЛЬНО ОБЯЗАТЕЛЬНО:
-- Просканируй payload и выпиши ПОЛНЫЙ список исходных таблиц из {req['catalog']}.{req['source_schema']}.*, которые встречаются в FROM/JOIN.
-- Для каждой из них создай объект в catalog.target_schema (Parquet; для фактов/линков — partitioning по дате, при горячих джойнах — bucket по стабильному ключу) и добавь миграцию INSERT (с явным списком колонок).
-- В queries[] сохраняй исходный queryid и используй ключ "query" (НЕ "statement").
-- Избегай ORDER BY random(), CROSS JOIN (VALUES ...), дублирующих UNION ALL; не применяй функции дат в WHERE.
-- Если семантика метрики — пользователи, используй COUNT(DISTINCT client_id). Если кардинальность большая — approx_distinct.
-- Если не уверена в распределении дат для кварталов — используй диапазоны (>=, <) в WHERE и CASE в SELECT, а не date_trunc в WHERE.
+- **catalog**: `{req['catalog']}, source_schema: {req['source_schema']}, target_schema: {req['target_schema']}`
+- **DDL**: the first string always must be: `CREATE SCHEMA {req['catalog']}.{req['target_schema']}`
+- **MIGRATIONS**: only INSERT/CTAS from `{req['catalog']}.{req['source_schema']} → {req['catalog']}.{req['target_schema']}`
+- **QUERIES**: link ONLY to `{req['catalog']}.{req['target_schema']}` (do not use the old schema)
+- **Anti-patterns are prohibited**:
+    - `SELECT *` from physical tables (allowed from CTE or in sampler with `LIMIT` only)
+    - Functions `month()` or `date_trunc()` in `WHERE` (use ranges).
+    - Do not do `ORDER BY random()` in final query (in sampler with `LIMIT` only).
+- Save `queryid` from the payload during refactoring
+- Return FULL VALID JSON in one batch. NO EXPLANATIONS.
 
-DDL ПОЛИТИКА (ЖЁСТКО, SCHEMA-AWARE):
-- Используй ТОЛЬКО ICEBERG-стиль: WITH (format='PARQUET', partitioning=ARRAY[...]); НЕ использовать bucketed_by, bucket_count, partitioned_by.
-- Перед созданием DDL для каждой таблицы из {req['catalog']}.{req['source_schema']}.* определи список ЕЁ колонок на основе payload/контекста:
-  • Разрешено включать в partitioning ТОЛЬКО те поля, которые гарантированно существуют в этой таблице (например, payment_dt только если поле точно есть).
-  • Если не уверен — не включай поле в partitioning.
-- Если нужен date-pruning, но дата отсутствует в источнике, используй денормализацию:
-  • CTAS через JOIN с таблицей, где дата есть (обычно l_payment_client), добавь поле в схему (WHERE 1=0).
-  • Затем миграция INSERT с JOIN, чтобы заполнить денормализованное поле.
-- Рекомендации:
-  • l_*_payment / l_payment_client / l_payment_promo: ARRAY['payment_dt', 'bucket(payment_id, 50)'] ТОЛЬКО если payment_dt точно существует. Иначе — ARRAY['bucket(payment_id, 50)'].
-  • l_excursion_author / l_excursion_category: ARRAY['bucket(excursion_id, 50)'].
-  • l_author_quest / l_quest_category / l_quest_episode: ARRAY['bucket(quest_id, 50)'].
-  • h_* и маленькие s_*: без partitioning/бакетинга.
-- В migrations[] всегда указывай явные списки колонок (не SELECT *).
-- DDL первым всегда CREATE SCHEMA {req['catalog']}.{req['source_schema']}. QUERIES должны ссылаться только на {req['catalog']}.{req['target_schema']}.*.
+## ADDITINONALLY OBLIGATORY:
+- Scan the payload and write FULL LIST of original tables from `{req['catalog']}.{req['source_schema']}.*`, which encounter in `FROM` or `JOIN`
+- For each of them create an object in `catalog.target_schema` (Parquet; for facts/links — partitioning over data, in case of hot joins — bucket over stable key) and add migration INSERT (with explicit columns list).
+- In `queries[]` save original `queryid` and use key  "query" (NOT `statement`)
+- Avoid `ORDER BY random()`, `CROSS JOIN (VALUES ...)`, doubling `UNION ALL`, do not apply date functions in `WHERE`
+- If metric's semantic are users, use `COUNT(DISTINCT client_id)`. In case of high cardinality - `approx_distinct`
+- If not sure about date distribution for quartals — use ranges (>=, <) in `WHERE`, and `CASE` in `SELECT`, NOT `date_trunc` in `WHERE`
 
-PAYLOAD DDL (полный):
+## DDL POLICY (STRICTLY, SCHEMA-AWARE):
+- Use ONLY ICEBERG-style: `WITH (format='PARQUET', partitioning=ARRAY[...]);`. DO NOT USE `bucketed_by`, `bucket_count`, `partitioned_by`
+- Before DDL creation for each table from `{req['catalog']}.{req['source_schema']}.*` estimate its list of columns based on payload or context:
+    - Allowed partitioning only over these fields, which are gauranteed existing in this table (e.g., `payment_dt` only if the field certainly exists)
+    - If not sure — do no include the field in partitioning
+- If date-pruning is needed, but date is missing, use denormalization:
+    - CTAS using `JOIN` with table, where date is located (usually `l_payment_client`), add the field in schema (`WHERE 1=0`)
+    - Then migration `INSERT` with `JOIN`, in order to fill denormalized field
+- Recommendations:
+    - `l_*_payment` / `l_payment_client` / `l_payment_promo`:` ARRAY['payment_dt', 'bucket(payment_id, 50)']` ONLY if `payment_dt` certainly exists. Else — `ARRAY['bucket(payment_id, 50)']`
+    - `l_excursion_author` / `l_excursion_category`: `ARRAY['bucket(excursion_id, 50)']`
+    - `l_author_quest` / `l_quest_category` / `l_quest_episode`: `ARRAY['bucket(quest_id, 50)']`
+    - `h_*` and small `s_*`: without any partitioning or bucketing
+- In the `migrations[]` always specify explicit lists of columns (NOT `SELECT *`)
+- DDL always at the beginning: `CREATE SCHEMA {req['catalog']}.{req['source_schema']}`. `QUERIES` must link only to `{req['catalog']}.{req['target_schema']}.*`
+
+## PAYLOAD DDL:
+```
 {json.dumps(full_payload['ddl'], ensure_ascii=False)}
+```
 
-PAYLOAD QUERIES (полный):
+## PAYLOAD QUERIES:
+```
 {json.dumps(full_payload['queries'], ensure_ascii=False)}
+```
 
-CONTEXT PACK FIELDS EXPLANATION:
+## CONTEXT PACK FIELDS EXPLANATION:
+- `default_catalog`: default catalog of the schema
+- `default_schema`: default schema of the tables
+- `ddl_tables`: list of full names of the tables in the format "catalog"."schema"."table"
+- `queries_overview`: counts of total_queries and total run quantities
+- `join_graph_edges`: list of joining tables with counts of joins
+- `join_key_freq`: dict of joining tables and corresponding columns and their frequency
+- `table_scan_freq`: scan count of tables
+- `table_scan_query_freq`: scan count of queries to tables
+- `column_usage_freq`: dict of columns (full path) and their count of usage
+- `groupby_patterns`: list of dicts of properties about most frequent groupby's
+- `window_functions`: list of dicts of names of used window functions and their usage frequency
+- `top_queries_by_q`: list of dicts of query ids to their run count
+- `hot_join_cliques`: list of lists of hot join cliques
+- `hot_columns_per_table`: list of dicts of tables and their most used columns
 
-
-CONTEXT PACK (полный):
+## CONTEXT PACK:
+```
 {json.dumps(full_context, ensure_ascii=False)}
+```
 
-ПРИМЕРЫ/ЯКОРЯ:
+## EXAMPLES / ANCHORS:
+```
 {EXAMPLES}
+```
 """.strip()
     return CONTRACT
 
@@ -266,8 +306,8 @@ CONTEXT PACK (полный):
 # =========================
 # Регэкспы и проверки
 # =========================
-CODE_FENCE_RE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.S | re.I)
-SELECT_STAR_FROM_RE = re.compile(
+CODE_FENCE_RE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.S | re.I)#
+SELECT_STAR_FROM_RE = re.compile(#
     r"\bSELECT\s+\*\s+FROM\s+([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*){0,2})", re.I
 )
 CTE_NAME_RE = re.compile(r"\b([a-zA-Z_]\w*)\s+AS\s*\(", re.I)
