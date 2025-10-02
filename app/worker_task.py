@@ -5,10 +5,10 @@ from typing import Dict, Any
 from celery import Celery
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
 from celery.signals import worker_process_init, worker_process_shutdown
-from time import sleep
 
 from sqlalchemy.orm import sessionmaker, Session
 
+from app.analyze.analyze_sql import analyze_sql
 from app.client.trino_client import extract_connection_details
 from app.config import LCTSettings, lct_settings
 from app.db import create_engine_from_url
@@ -105,14 +105,17 @@ def _do_work(payload: Dict[str, Any]) -> Dict[str, Any]:
     jdbc_url = payload.get("url", "")
     trino_settings = extract_connection_details(jdbc_url)
     logger.info(f"Trino settings: {trino_settings}")
+
+    analyzed_sql = analyze_sql(ddl, queries)
+    logger.info(f"Analyzed sql: {analyzed_sql}")
     # comment out because we don't interact directly with trino now
     # mock_sql = "EXPLAIN ANALYZE SELECT t.* FROM system.runtime.queries t WHERE t.source = 'dbt-trino-1.8.0' LIMIT 10"
     # explain_result = explain_analyze(mock_sql, trino_settings)
     # logger.info(explain_result)
 
-    for i in range(1, MOCK_TASK_PROCESSING_TICS + 1):
-        logger.info(f"sleeping for {SLEEP_INTERVAL_SECS * i} seconds")
-        sleep(SLEEP_INTERVAL_SECS)
+    # for i in range(1, MOCK_TASK_PROCESSING_TICS + 1):
+    #     logger.info(f"sleeping for {SLEEP_INTERVAL_SECS * i} seconds")
+    #     sleep(SLEEP_INTERVAL_SECS)
 
     return mock_response_for_do_work()
 
