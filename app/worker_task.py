@@ -9,7 +9,9 @@ from celery.signals import worker_process_init, worker_process_shutdown
 from sqlalchemy.orm import sessionmaker, Session
 
 from app.analyze.analyze_sql import analyze_sql
+from app.analyze.sql_static import build_context_pack
 from app.client.trino_client import extract_connection_details
+from app.client.yandex_client import call_yandex
 from app.config import LCTSettings, lct_settings
 from app.db import create_engine_from_url
 from app.schema import Task, TaskStatus
@@ -101,23 +103,20 @@ def mock_response_for_do_work() -> Dict[str, Any]:
 def _do_work(payload: Dict[str, Any]) -> Dict[str, Any]:
     queries = payload.get("queries", "")
     ddl = payload.get("ddl", [])
-    logger.info(f"Queries: {queries}, DDL: {ddl}")
-    jdbc_url = payload.get("url", "")
-    trino_settings = extract_connection_details(jdbc_url)
-    logger.info(f"Trino settings: {trino_settings}")
 
-    analyzed_sql = analyze_sql(ddl, queries)
-    logger.info(f"Analyzed sql: {analyzed_sql}")
-    # comment out because we don't interact directly with trino now
-    # mock_sql = "EXPLAIN ANALYZE SELECT t.* FROM system.runtime.queries t WHERE t.source = 'dbt-trino-1.8.0' LIMIT 10"
-    # explain_result = explain_analyze(mock_sql, trino_settings)
-    # logger.info(explain_result)
+    # logger.info(f"Queries: {queries}, DDL: {ddl}")
+    # jdbc_url = payload.get("url", "")
+    # trino_settings = extract_connection_details(jdbc_url)
+    # logger.info(f"Trino settings: {trino_settings}")
 
-    # for i in range(1, MOCK_TASK_PROCESSING_TICS + 1):
-    #     logger.info(f"sleeping for {SLEEP_INTERVAL_SECS * i} seconds")
-    #     sleep(SLEEP_INTERVAL_SECS)
-
-    return mock_response_for_do_work()
+    context_pack = build_context_pack(ddl=ddl, queries=queries)
+    requirements = {
+        'catalog': context_pack['default_catalog'],
+        'source_schema': context_pack['default_schema'],
+        'target_schema': 'new_schema'
+    }
+    result = call_yandex(context_pack, payload, requirements=requirements)
+    return result
 
 
 @celery_app.task(
