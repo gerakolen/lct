@@ -15,6 +15,10 @@ class QueryItem(BaseModel):
     runquantity: int = Field(..., ge=0, description="Number of times the query is run")
     executiontime: int = Field(..., ge=0, description="Execution Time")
 
+class QueryResponseItem(BaseModel):
+    queryid: UUID = Field(..., description="Unique query ID")
+    query: str = Field(..., description="SQL query")
+
 
 class NewTaskRequest(BaseModel):
     url: str = Field(..., description="JDBC connection string")
@@ -41,7 +45,7 @@ class ExplainResponse(BaseModel):
 class TaskResultResponse(BaseModel):
     ddl: List[DDLStatement]
     migrations: List[DDLStatement]
-    queries: List[QueryItem]
+    queries: List[QueryResponseItem]
 
 
 # TODO used only in tests, should be removed
